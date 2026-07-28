@@ -1,8 +1,10 @@
-# AuraIceLocal
+# RM Aura Ice Display
 
 Aplicativo local experimental para o LCD do **Rise Mode Aura Ice Black 360 mm ARGB — RM-WAIB-06-ARGB**.
 
 O manual detalhado de operação está em [docs/MANUAL_DO_USUARIO.md](docs/MANUAL_DO_USUARIO.md) e também pode ser aberto dentro do aplicativo em **Ajuda > Manual do usuário** ou pela tecla **F1**.
+
+As versões instaláveis e as atualizações são publicadas em [GitHub Releases](https://github.com/rafamuz/AuraIceLocal/releases). A instalação oficial usa Velopack; o botão **Verificar atualizações** baixa a nova versão, encerra o transporte USB com segurança, aplica os arquivos e reinicia o aplicativo.
 
 ## Versão 0.3 — protocolo real de 11 bytes e proteção térmica
 
@@ -49,7 +51,7 @@ Ao iniciar o monitoramento, o aplicativo conecta e envia ao USB automaticamente,
 2. fechar completamente o programa oficial da Rise Mode;
 3. o relatório de saída real tem exatamente 11 bytes.
 
-O AuraIceLocal não envia pacotes a dispositivos apenas classificados como `Possível` ou `Desconhecido`.
+O RM Aura Ice Display não envia pacotes a dispositivos apenas classificados como `Possível` ou `Desconhecido`.
 
 Nenhum arquivo de log é criado. Apenas preferências são guardadas em:
 
@@ -119,7 +121,7 @@ O ícone da bandeja exibe a temperatura atualmente escolhida para o visor e muda
 - fechar a janela esconde o painel, sem parar o monitoramento;
 - **Painel** reabre a janela;
 - **Sair** encerra o monitoramento, desconecta o transporte e fecha o processo;
-- quando iniciado pelo Windows, o AuraIceLocal abre diretamente na bandeja.
+- quando iniciado pelo Windows, o RM Aura Ice Display abre diretamente na bandeja.
 
 ## Compilação
 
@@ -137,15 +139,17 @@ dotnet build .\AuraIceLocal.sln -c Debug
 dotnet run --project .\src\AuraIceLocal\AuraIceLocal.csproj
 ```
 
-Para publicar uma versão única para Windows x64:
+Para gerar os arquivos self-contained usados pelo instalador:
 
 ```powershell
 dotnet publish .\src\AuraIceLocal\AuraIceLocal.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
-  -p:PublishSingleFile=true
+  -p:PublishSingleFile=false
 ```
+
+O workflow **Publicar instalador** recebe uma versão SemVer manualmente, executa os testes, gera o `Setup.exe` e os pacotes incrementais com Velopack 1.2.0 e publica uma GitHub Release.
 
 ## Primeiro teste
 
@@ -160,5 +164,6 @@ dotnet publish .\src\AuraIceLocal\AuraIceLocal.csproj `
 
 - LibreHardwareMonitorLib 0.9.6 — MPL-2.0;
 - HidSharp 2.6.4 — Apache-2.0.
+- Velopack 1.2.0 — MIT.
 
 As dependências são restauradas pelo NuGet. Nenhuma DLL extraída do programa oficial é redistribuída.

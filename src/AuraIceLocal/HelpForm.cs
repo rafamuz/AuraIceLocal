@@ -16,7 +16,7 @@ internal sealed partial class HelpForm : Form
     public HelpForm()
     {
         _sections = HelpContent.LoadSections();
-        Text = "Ajuda — AuraIceLocal";
+        Text = "Ajuda — RM Aura Ice Display";
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(760, 520);
         Size = new Size(1080, 760);

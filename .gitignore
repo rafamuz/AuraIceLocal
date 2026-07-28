@@ -10,6 +10,7 @@ releases/
 .idea/
 .codex-dotnet-sdk-*/
 .codex-dotnet-install.ps1
+.codex-vpk/
 **/settings.json
 *.log
 *.pfx

@@ -28,7 +28,7 @@ internal sealed class TrayTemperatureIcon : IDisposable
         _notifyIcon = new NotifyIcon
         {
             ContextMenuStrip = menu,
-            Text = "AuraIceLocal — temperatura indisponível",
+            Text = "RM Aura Ice Display — temperatura indisponível",
             Visible = false
         };
         _notifyIcon.DoubleClick += (_, _) => PanelRequested?.Invoke();
@@ -43,8 +43,8 @@ internal sealed class TrayTemperatureIcon : IDisposable
             : null;
 
         _notifyIcon.Text = rounded.HasValue
-            ? $"AuraIceLocal — {rounded.Value} °C"
-            : "AuraIceLocal — temperatura indisponível";
+            ? $"RM Aura Ice Display — {rounded.Value} °C"
+            : "RM Aura Ice Display — temperatura indisponível";
 
         if (_lastRoundedTemperature == rounded && _currentIcon is not null)
         {

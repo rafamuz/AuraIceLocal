@@ -1,0 +1,77 @@
+name: Publicar instalador
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão SemVer sem o prefixo v, por exemplo 0.3.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Preparar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restaurar dependências
+        run: dotnet restore AuraIceLocal.sln
+
+      - name: Executar testes
+        run: dotnet test AuraIceLocal.sln --configuration Release --no-restore
+
+      - name: Publicar aplicativo self-contained
+        run: >-
+          dotnet publish src/AuraIceLocal/AuraIceLocal.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output artifacts/publish
+          -p:PublishSingleFile=false
+          -p:Version=${{ inputs.version }}
+
+      - name: Instalar Velopack CLI
+        run: dotnet tool install --tool-path .tools vpk --version 1.2.0
+
+      - name: Baixar versão anterior para gerar pacote incremental
+        continue-on-error: true
+        run: >-
+          .\.tools\vpk download github
+          --repoUrl https://github.com/${{ github.repository }}
+          --token "${{ secrets.GITHUB_TOKEN }}"
+          --outputDir Releases
+
+      - name: Gerar instalador e pacotes
+        run: >-
+          .\.tools\vpk pack
+          --packId RMAuraIceDisplay
+          --packVersion ${{ inputs.version }}
+          --packDir artifacts/publish
+          --mainExe RMAuraIceDisplay.exe
+          --packTitle "RM Aura Ice Display"
+          --packAuthors "Rafael F. M."
+          --runtime win-x64
+          --releaseNotes CHANGELOG.md
+          --outputDir Releases
+          --shortcuts Desktop,StartMenuRoot
+
+      - name: Publicar no GitHub Releases
+        run: >-
+          .\.tools\vpk upload github
+          --repoUrl https://github.com/${{ github.repository }}
+          --token "${{ secrets.GITHUB_TOKEN }}"
+          --outputDir Releases
+          --publish
+          --releaseName "RM Aura Ice Display ${{ inputs.version }}"
+          --tag "v${{ inputs.version }}"
+          --targetCommitish "${{ github.sha }}"

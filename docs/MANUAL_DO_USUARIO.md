@@ -1,6 +1,6 @@
-# Manual do usuário — AuraIceLocal 0.3
+# Manual do usuário — RM Aura Ice Display 0.3
 
-O AuraIceLocal monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
+O RM Aura Ice Display monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
 
 O manual também está disponível dentro do programa pelo menu **Ajuda > Manual do usuário** ou pela tecla **F1**.
 
@@ -12,7 +12,7 @@ O aplicativo realiza três trabalhos principais:
 - lê temperaturas e percentuais de utilização do computador;
 - monta e envia ao visor um relatório HID de exatamente 11 bytes, uma vez por segundo.
 
-O AuraIceLocal foi validado com o dispositivo:
+O RM Aura Ice Display foi validado com o dispositivo:
 
 ```text
 VID: AA88
@@ -32,7 +32,7 @@ O programa precisa ser executado como administrador para acessar todos os sensor
 
 1. Conecte o cabo USB interno do visor.
 2. Feche completamente o software oficial da Rise Mode.
-3. Abra o AuraIceLocal como administrador.
+3. Abra o RM Aura Ice Display como administrador.
 4. Clique em **Procurar visores**.
 5. Confirme que o visor AA88:8666 aparece como **Confirmado** e com saída de 11 bytes.
 6. Mantenha **Core Average** como sensor de exibição ou escolha outro sensor da CPU.
@@ -48,7 +48,7 @@ Abre esta documentação dentro do aplicativo. A lista à esquerda separa os ass
 
 O manual é incorporado ao executável durante a compilação. Isso garante que a ajuda instalada corresponda à versão do aplicativo.
 
-### Sobre o AuraIceLocal
+### Sobre o RM Aura Ice Display
 
 Mostra a versão instalada, a finalidade do programa e a identificação básica do perfil HID suportado. Essa informação será útil para conferir a versão antes de procurar ou instalar atualizações.
 
@@ -161,7 +161,7 @@ Antes do envio, uma confirmação mostra VID/PID, produto, tamanho e todos os by
 
 ### Iniciar com o Windows
 
-Cria uma tarefa agendada chamada `AuraIceLocal`, executada no logon com privilégios elevados. Quando aberto por essa tarefa, o aplicativo inicia somente na bandeja, sem mostrar o painel.
+Cria uma tarefa agendada chamada `RM Aura Ice Display`, executada no logon com privilégios elevados. Quando aberto por essa tarefa, o aplicativo inicia somente na bandeja, sem mostrar o painel. Instalações anteriores que ainda tenham a tarefa legada `AuraIceLocal` são migradas ao reativar essa opção.
 
 Na versão portátil atual, a tarefa usa o caminho absoluto do executável que estava aberto quando a opção foi marcada. Se a pasta for movida, desative e ative novamente a opção para registrar o novo caminho.
 
@@ -171,9 +171,33 @@ O instalador e o atualizador planejados usarão um lançador estável, evitando 
 
 Quando marcada, inicia automaticamente a leitura e o envio assim que o aplicativo abre, desde que exista um visor confirmado e o software oficial esteja fechado.
 
-Quando combinada com **Iniciar com o Windows**, o fluxo é totalmente automático: o Windows abre o AuraIceLocal na bandeja e o aplicativo começa a monitorar e enviar sem que o painel precise ser aberto.
+Quando combinada com **Iniciar com o Windows**, o fluxo é totalmente automático: o Windows abre o RM Aura Ice Display na bandeja e o aplicativo começa a monitorar e enviar sem que o painel precise ser aberto.
 
 Quando desmarcada, o aplicativo abre parado e aguarda o botão **Iniciar monitoramento**.
+
+## Atualizações do aplicativo
+
+### Botão Verificar atualizações
+
+Consulta as Releases públicas de `https://github.com/rafamuz/AuraIceLocal` e compara a versão disponível com a versão instalada.
+
+Na cópia instalada pelo Setup oficial, o fluxo é:
+
+1. procurar uma versão estável mais nova;
+2. pedir autorização para baixar;
+3. baixar em segundo plano, mostrando o percentual no painel;
+4. manter o monitoramento funcionando durante o download;
+5. pedir uma segunda confirmação antes de aplicar;
+6. parar o monitoramento e desconectar o USB;
+7. salvar preferências e posição da janela;
+8. fechar, substituir os arquivos e reiniciar automaticamente;
+9. retomar o monitoramento se **Monitorar e enviar ao abrir** estiver marcado.
+
+Uma cópia `Debug` ou portátil informa que a atualização integrada só fica disponível depois da instalação pelo Setup. Isso evita tentar substituir arquivos de desenvolvimento ou pastas movidas manualmente.
+
+O RM Aura Ice Display não instala uma atualização sem confirmação. O download pode ocorrer com o painel aberto, mas a substituição dos arquivos exige um reinício rápido porque o Windows mantém o executável e as DLLs em uso enquanto o processo está aberto.
+
+O Velopack valida o pacote baixado antes da aplicação. Releases preliminares não são oferecidas pelo canal estável.
 
 ## Resumo de estado
 
@@ -269,7 +293,7 @@ Lista os sensores de temperatura enumerados, seu identificador interno e o valor
 
 ## Bandeja do sistema
 
-Fechar a janela pelo botão **X** não encerra o AuraIceLocal. O painel é escondido e o monitoramento continua.
+Fechar a janela pelo botão **X** não encerra o RM Aura Ice Display. O painel é escondido e o monitoramento continua.
 
 O ícone da bandeja mostra a temperatura inteira atualmente destinada ao visor. O número e a cor mudam conforme a temperatura é atualizada.
 
@@ -298,7 +322,7 @@ Se um monitor for removido ou a resolução mudar, a janela salva é trazida de 
 
 ## Segurança e concorrência USB
 
-O AuraIceLocal aplica as seguintes travas em todas as escritas:
+O RM Aura Ice Display aplica as seguintes travas em todas as escritas:
 
 - somente dispositivos **Confirmado** chegam ao transporte;
 - o pacote precisa ter exatamente o tamanho exigido pelo HID;
@@ -308,7 +332,7 @@ O AuraIceLocal aplica as seguintes travas em todas as escritas:
 - trocar o visor selecionado cancela a autorização anterior;
 - testes automatizados não abrem o transporte USB.
 
-Não execute o software oficial e o AuraIceLocal escrevendo simultaneamente. Dois programas tentando controlar o mesmo HID podem causar falhas, dados alternados ou bloqueio do dispositivo.
+Não execute o software oficial e o RM Aura Ice Display escrevendo simultaneamente. Dois programas tentando controlar o mesmo HID podem causar falhas, dados alternados ou bloqueio do dispositivo.
 
 ## Dados armazenados e privacidade
 
@@ -318,7 +342,9 @@ As preferências ficam em:
 %LOCALAPPDATA%\AuraIceLocal\settings.json
 ```
 
-O aplicativo não cria arquivos de log e não persiste:
+O RM Aura Ice Display não registra histórico de sensores nem conteúdo USB. O instalador/atualizador Velopack pode manter seu próprio registro técnico de instalação, atualização ou falha. Esse registro não contém histórico de temperatura nem os pacotes enviados ao LCD.
+
+O aplicativo não persiste:
 
 - DevicePath;
 - InstanceId;
@@ -356,7 +382,7 @@ A identidade salva contém apenas perfil, VID/PID e, quando disponíveis, série
 
 - desative e ative novamente **Iniciar com o Windows**;
 - se a versão portátil foi movida, registre novamente a tarefa;
-- confira a tarefa `AuraIceLocal` no Agendador de Tarefas.
+- confira a tarefa `RM Aura Ice Display` no Agendador de Tarefas.
 
 ### A temperatura não aparece
 
