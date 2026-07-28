@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Velopack.Locators;
 
 namespace AuraIceLocal;
 
@@ -22,7 +23,10 @@ internal static class WindowsStartupManager
     {
         if (enabled)
         {
-            string executablePath = Application.ExecutablePath;
+            string executablePath = StartupExecutableResolver.Resolve(
+                Application.ExecutablePath,
+                VelopackLocator.Current.RootAppDir,
+                VelopackLocator.Current.CurrentlyInstalledVersion is not null);
             int exitCode = RunTaskScheduler(
                 [
                     "/Create",

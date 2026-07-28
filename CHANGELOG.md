@@ -8,6 +8,9 @@
 - Remove o DevMode da interface; iniciar monitoramento passa a conectar e enviar automaticamente ao visor confirmado.
 - Abre a primeira janela em 60% x 80% da tela e restaura posição, tamanho ou estado maximizado nas execuções seguintes.
 - Adiciona menu Ajuda, manual navegável dentro do aplicativo, atalho F1 e documentação detalhada no repositório.
+- Integra Velopack 1.2.0, botão Verificar atualizações, download com progresso, aplicação segura e reinício automático.
+- Adiciona workflow manual para gerar Setup, pacotes incrementais e publicar GitHub Releases.
+- Faz a tarefa agendada usar o lançador estável da instalação Velopack.
 - Atualiza o perfil AA88:8666 para os relatórios reais de 11/11/0 bytes e descritores auxiliares confirmados.
 - Define o pacote AuraIceV1 fixo de 11 bytes, com Report ID zero, limites independentes e arredondamento.
 - Confirma o visor pelos critérios principais e impede que Possible/Unknown alcancem o transporte.

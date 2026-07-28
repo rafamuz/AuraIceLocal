@@ -4,6 +4,8 @@ Aplicativo local experimental para o LCD do **Rise Mode Aura Ice Black 360 mm AR
 
 O manual detalhado de operação está em [docs/MANUAL_DO_USUARIO.md](docs/MANUAL_DO_USUARIO.md) e também pode ser aberto dentro do aplicativo em **Ajuda > Manual do usuário** ou pela tecla **F1**.
 
+As versões instaláveis e as atualizações são publicadas em [GitHub Releases](https://github.com/rafamuz/AuraIceLocal/releases). A instalação oficial usa Velopack; o botão **Verificar atualizações** baixa a nova versão, encerra o transporte USB com segurança, aplica os arquivos e reinicia o aplicativo.
+
 ## Versão 0.3 — protocolo real de 11 bytes e proteção térmica
 
 O LCD não é mais tratado como um caminho USB fixo. O aplicativo agora:
@@ -137,15 +139,17 @@ dotnet build .\AuraIceLocal.sln -c Debug
 dotnet run --project .\src\AuraIceLocal\AuraIceLocal.csproj
 ```
 
-Para publicar uma versão única para Windows x64:
+Para gerar os arquivos self-contained usados pelo instalador:
 
 ```powershell
 dotnet publish .\src\AuraIceLocal\AuraIceLocal.csproj `
   -c Release `
   -r win-x64 `
   --self-contained true `
-  -p:PublishSingleFile=true
+  -p:PublishSingleFile=false
 ```
+
+O workflow **Publicar instalador** recebe uma versão SemVer manualmente, executa os testes, gera o `Setup.exe` e os pacotes incrementais com Velopack 1.2.0 e publica uma GitHub Release.
 
 ## Primeiro teste
 
@@ -160,5 +164,6 @@ dotnet publish .\src\AuraIceLocal\AuraIceLocal.csproj `
 
 - LibreHardwareMonitorLib 0.9.6 — MPL-2.0;
 - HidSharp 2.6.4 — Apache-2.0.
+- Velopack 1.2.0 — MIT.
 
 As dependências são restauradas pelo NuGet. Nenhuma DLL extraída do programa oficial é redistribuída.

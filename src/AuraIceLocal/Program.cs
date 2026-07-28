@@ -1,4 +1,5 @@
 using System.Threading;
+using Velopack;
 
 namespace AuraIceLocal;
 
@@ -9,6 +10,10 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        VelopackApp.Build()
+            .SetAutoApplyOnStartup(false)
+            .Run();
+
         const string mutexName = @"Local\AuraIceLocal_5C12B3A1";
         _singleInstanceMutex = new Mutex(initiallyOwned: true, mutexName, out bool createdNew);
 

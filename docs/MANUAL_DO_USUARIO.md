@@ -175,6 +175,30 @@ Quando combinada com **Iniciar com o Windows**, o fluxo é totalmente automátic
 
 Quando desmarcada, o aplicativo abre parado e aguarda o botão **Iniciar monitoramento**.
 
+## Atualizações do aplicativo
+
+### Botão Verificar atualizações
+
+Consulta as Releases públicas de `https://github.com/rafamuz/AuraIceLocal` e compara a versão disponível com a versão instalada.
+
+Na cópia instalada pelo Setup oficial, o fluxo é:
+
+1. procurar uma versão estável mais nova;
+2. pedir autorização para baixar;
+3. baixar em segundo plano, mostrando o percentual no painel;
+4. manter o monitoramento funcionando durante o download;
+5. pedir uma segunda confirmação antes de aplicar;
+6. parar o monitoramento e desconectar o USB;
+7. salvar preferências e posição da janela;
+8. fechar, substituir os arquivos e reiniciar automaticamente;
+9. retomar o monitoramento se **Monitorar e enviar ao abrir** estiver marcado.
+
+Uma cópia `Debug` ou portátil informa que a atualização integrada só fica disponível depois da instalação pelo Setup. Isso evita tentar substituir arquivos de desenvolvimento ou pastas movidas manualmente.
+
+O AuraIceLocal não instala uma atualização sem confirmação. O download pode ocorrer com o painel aberto, mas a substituição dos arquivos exige um reinício rápido porque o Windows mantém o executável e as DLLs em uso enquanto o processo está aberto.
+
+O Velopack valida o pacote baixado antes da aplicação. Releases preliminares não são oferecidas pelo canal estável.
+
 ## Resumo de estado
 
 ### Estado
@@ -318,7 +342,9 @@ As preferências ficam em:
 %LOCALAPPDATA%\AuraIceLocal\settings.json
 ```
 
-O aplicativo não cria arquivos de log e não persiste:
+O AuraIceLocal não registra histórico de sensores nem conteúdo USB. O instalador/atualizador Velopack pode manter seu próprio registro técnico de instalação, atualização ou falha. Esse registro não contém histórico de temperatura nem os pacotes enviados ao LCD.
+
+O aplicativo não persiste:
 
 - DevicePath;
 - InstanceId;

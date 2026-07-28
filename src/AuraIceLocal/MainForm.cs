@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Velopack;
 
 namespace AuraIceLocal;
 
@@ -14,6 +15,7 @@ internal sealed class MainForm : Form
     private readonly System.Windows.Forms.Timer _safetyTimer = new() { Interval = 500 };
     private readonly bool _startedWithWindows;
     private readonly TrayTemperatureIcon _trayIcon;
+    private readonly AppUpdateService _updateService = new();
 
     private HardwareMonitorService? _hardwareMonitor;
     private CancellationTokenSource? _monitorCts;
@@ -23,6 +25,7 @@ internal sealed class MainForm : Form
     private bool _loadingAutomationControls;
     private bool _exitRequested;
     private bool _windowPlacementReady;
+    private bool _updateBusy;
     private FormWindowState _lastVisibleWindowState = FormWindowState.Normal;
     private HelpForm? _helpForm;
 
@@ -38,6 +41,9 @@ internal sealed class MainForm : Form
     private readonly Button _singlePacketTestButton = new() { Text = "Enviar um pacote de teste", AutoSize = true, Enabled = false };
     private readonly CheckBox _startWithWindows = new() { Text = "Iniciar com o Windows", AutoSize = true };
     private readonly CheckBox _autoStartMonitoring = new() { Text = "Monitorar e enviar ao abrir", AutoSize = true };
+    private readonly Button _checkUpdatesButton = new() { Text = "Verificar atualizações", AutoSize = true };
+    private readonly Label _updateStatusLabel = new() { AutoSize = true };
+    private readonly ProgressBar _updateProgress = new() { Width = 180, Height = 22, Visible = false };
 
     private readonly Label _statusLabel = NewValueLabel("Parado");
     private readonly Label _rawTemperatureLabel = NewValueLabel("-- °C");
@@ -100,10 +106,11 @@ internal sealed class MainForm : Form
             AutoScroll = true,
             Padding = new Padding(14),
             ColumnCount = 1,
-            RowCount = 6,
+            RowCount = 7,
             GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -178,6 +185,29 @@ internal sealed class MainForm : Form
         });
         root.Controls.Add(automationControls, 0, 3);
 
+        var updateControls = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            WrapContents = true,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        updateControls.Controls.Add(new Label
+        {
+            Text = "Atualizações:",
+            AutoSize = true,
+            Font = new Font(Font, FontStyle.Bold),
+            Margin = new Padding(0, 7, 10, 0)
+        });
+        updateControls.Controls.Add(_checkUpdatesButton);
+        _updateStatusLabel.Text = $"Versão instalada: {_updateService.CurrentVersion}";
+        _updateStatusLabel.Margin = new Padding(10, 7, 10, 0);
+        updateControls.Controls.Add(_updateStatusLabel);
+        _updateProgress.Margin = new Padding(6, 4, 0, 0);
+        updateControls.Controls.Add(_updateProgress);
+        root.Controls.Add(updateControls, 0, 4);
+
         var summary = new TableLayoutPanel
         {
             AutoSize = true,
@@ -219,7 +249,7 @@ internal sealed class MainForm : Form
         };
         summary.Controls.Add(warning, 0, 5);
         summary.SetColumnSpan(warning, 4);
-        root.Controls.Add(summary, 0, 4);
+        root.Controls.Add(summary, 0, 5);
 
         var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(16, 6) };
         tabs.MinimumSize = new Size(0, 330);
@@ -229,7 +259,7 @@ internal sealed class MainForm : Form
         sensorTab.Controls.Add(_sensorList);
         tabs.TabPages.Add(deviceTab);
         tabs.TabPages.Add(sensorTab);
-        root.Controls.Add(tabs, 0, 5);
+        root.Controls.Add(tabs, 0, 6);
 
         Controls.Add(root);
         Controls.Add(_mainMenu);
@@ -239,6 +269,7 @@ internal sealed class MainForm : Form
         _deviceCombo.SelectedIndexChanged += (_, _) => OnSelectedDeviceChanged();
         _startStopButton.Click += (_, _) => ToggleMonitoring();
         _singlePacketTestButton.Click += (_, _) => SendSingleTestPacket();
+        _checkUpdatesButton.Click += async (_, _) => await CheckForUpdatesAsync();
         _sensorCombo.SelectedIndexChanged += (_, _) =>
         {
             if (_sensorCombo.SelectedItem is string selected)
@@ -269,6 +300,128 @@ internal sealed class MainForm : Form
                 _settings.Save();
             }
         };
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        if (_updateBusy)
+        {
+            return;
+        }
+
+        _updateBusy = true;
+        _checkUpdatesButton.Enabled = false;
+        _updateProgress.Visible = false;
+
+        try
+        {
+            if (!_updateService.IsInstalled)
+            {
+                _updateStatusLabel.Text = "Atualização integrada disponível após instalar com o Setup do AuraIceLocal";
+                MessageBox.Show(
+                    "Esta cópia é portátil ou de desenvolvimento. A atualização pelo próprio aplicativo fica disponível depois que o AuraIceLocal é instalado pelo Setup oficial.",
+                    "Atualizações",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            VelopackAsset? pendingUpdate = _updateService.PendingUpdate;
+            if (pendingUpdate is not null)
+            {
+                string pendingVersion = pendingUpdate.Version.ToString();
+                DialogResult applyPending = MessageBox.Show(
+                    $"A versão {pendingVersion} já foi baixada.\n\n" +
+                    "O monitoramento será interrompido, o USB será desconectado e o AuraIceLocal reiniciará automaticamente. Deseja aplicar agora?",
+                    "Atualização pronta",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question,
+                    MessageBoxDefaultButton.Button1);
+                if (applyPending == DialogResult.Yes)
+                {
+                    PrepareForUpdate();
+                    _updateService.ApplyUpdatesAndRestart(pendingUpdate);
+                }
+                else
+                {
+                    _updateStatusLabel.Text = $"Versão {pendingVersion} baixada e aguardando instalação";
+                }
+                return;
+            }
+
+            _updateStatusLabel.Text = "Procurando nova versão...";
+            UpdateInfo? update = await _updateService.CheckForUpdatesAsync();
+            if (update is null)
+            {
+                _updateStatusLabel.Text = $"AuraIceLocal {_updateService.CurrentVersion} está atualizado";
+                return;
+            }
+
+            string targetVersion = update.TargetFullRelease.Version.ToString();
+            DialogResult download = MessageBox.Show(
+                $"A versão {targetVersion} está disponível. Deseja baixar agora?\n\n" +
+                "O monitoramento continuará funcionando durante o download.",
+                "Atualização disponível",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button1);
+            if (download != DialogResult.Yes)
+            {
+                _updateStatusLabel.Text = $"Versão {targetVersion} disponível";
+                return;
+            }
+
+            _updateProgress.Value = 0;
+            _updateProgress.Visible = true;
+            _updateStatusLabel.Text = $"Baixando versão {targetVersion}...";
+            IProgress<int> progress = new Progress<int>(value =>
+            {
+                _updateProgress.Value = Math.Clamp(value, 0, 100);
+                _updateStatusLabel.Text = $"Baixando versão {targetVersion}: {_updateProgress.Value}%";
+            });
+            await _updateService.DownloadUpdatesAsync(update, progress.Report);
+
+            _updateStatusLabel.Text = $"Versão {targetVersion} pronta para instalar";
+            DialogResult apply = MessageBox.Show(
+                $"A versão {targetVersion} foi baixada e está pronta.\n\n" +
+                "O monitoramento será interrompido, o USB será desconectado e o AuraIceLocal reiniciará automaticamente. Deseja atualizar agora?",
+                "Aplicar atualização",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button1);
+            if (apply != DialogResult.Yes)
+            {
+                _updateStatusLabel.Text = $"Versão {targetVersion} baixada e aguardando instalação";
+                return;
+            }
+
+            PrepareForUpdate();
+            _updateService.ApplyUpdatesAndRestart(update);
+        }
+        catch (Exception ex)
+        {
+            _updateStatusLabel.Text = "Não foi possível atualizar";
+            MessageBox.Show(
+                $"A atualização não pôde ser concluída: {ex.Message}",
+                "Falha na atualização",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            _updateBusy = false;
+            _checkUpdatesButton.Enabled = true;
+            _updateProgress.Visible = false;
+        }
+    }
+
+    private void PrepareForUpdate()
+    {
+        StopMonitoring();
+        DisableUsbWritesAndDisconnect();
+        CaptureWindowPlacement(saveImmediately: false);
+        SaveCurrentSettings();
+        _exitRequested = true;
     }
 
     private void ConfigureMenu()
@@ -1044,6 +1197,13 @@ internal sealed class MainForm : Form
         StopMonitoring();
         _safetyTimer.Stop();
         _safetyTimer.Dispose();
+        SaveCurrentSettings();
+        _hidTransport.Dispose();
+        _trayIcon.Dispose();
+    }
+
+    private void SaveCurrentSettings()
+    {
         lock (_settings)
         {
             _settings.SmoothingSeconds = (double)_smoothing.Value;
@@ -1056,8 +1216,6 @@ internal sealed class MainForm : Form
             }
             _settings.Save();
         }
-        _hidTransport.Dispose();
-        _trayIcon.Dispose();
     }
 
     private HidDeviceCandidate? GetSelectedDevice()

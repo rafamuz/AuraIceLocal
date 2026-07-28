@@ -86,4 +86,29 @@ public sealed class SafetyStateTests
         session.Disable();
         Assert.False(session.WritesEnabled);
     }
+
+    [Fact]
+    public void InstalledStartupUsesStableVelopackLauncher()
+    {
+        string resolved = StartupExecutableResolver.Resolve(
+            @"C:\Apps\AuraIceLocal\current\AuraIceLocal.exe",
+            @"C:\Apps\AuraIceLocal",
+            isVelopackInstalled: true,
+            fileExists: path => path == @"C:\Apps\AuraIceLocal\AuraIceLocal.exe");
+
+        Assert.Equal(@"C:\Apps\AuraIceLocal\AuraIceLocal.exe", resolved);
+    }
+
+    [Fact]
+    public void PortableStartupKeepsCurrentExecutable()
+    {
+        string current = @"D:\Portable\AuraIceLocal.exe";
+        string resolved = StartupExecutableResolver.Resolve(
+            current,
+            @"C:\Apps\AuraIceLocal",
+            isVelopackInstalled: false,
+            fileExists: _ => true);
+
+        Assert.Equal(current, resolved);
+    }
 }
