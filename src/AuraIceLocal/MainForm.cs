@@ -66,7 +66,7 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "AuraIceLocal 0.3 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = true;
@@ -317,9 +317,9 @@ internal sealed class MainForm : Form
         {
             if (!_updateService.IsInstalled)
             {
-                _updateStatusLabel.Text = "Atualização integrada disponível após instalar com o Setup do AuraIceLocal";
+                _updateStatusLabel.Text = "Atualização integrada disponível após instalar com o Setup do RM Aura Ice Display";
                 MessageBox.Show(
-                    "Esta cópia é portátil ou de desenvolvimento. A atualização pelo próprio aplicativo fica disponível depois que o AuraIceLocal é instalado pelo Setup oficial.",
+                    "Esta cópia é portátil ou de desenvolvimento. A atualização pelo próprio aplicativo fica disponível depois que o RM Aura Ice Display é instalado pelo Setup oficial.",
                     "Atualizações",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -332,7 +332,7 @@ internal sealed class MainForm : Form
                 string pendingVersion = pendingUpdate.Version.ToString();
                 DialogResult applyPending = MessageBox.Show(
                     $"A versão {pendingVersion} já foi baixada.\n\n" +
-                    "O monitoramento será interrompido, o USB será desconectado e o AuraIceLocal reiniciará automaticamente. Deseja aplicar agora?",
+                    "O monitoramento será interrompido, o USB será desconectado e o RM Aura Ice Display reiniciará automaticamente. Deseja aplicar agora?",
                     "Atualização pronta",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Question,
@@ -353,7 +353,7 @@ internal sealed class MainForm : Form
             UpdateInfo? update = await _updateService.CheckForUpdatesAsync();
             if (update is null)
             {
-                _updateStatusLabel.Text = $"AuraIceLocal {_updateService.CurrentVersion} está atualizado";
+                _updateStatusLabel.Text = $"RM Aura Ice Display {_updateService.CurrentVersion} está atualizado";
                 return;
             }
 
@@ -384,7 +384,7 @@ internal sealed class MainForm : Form
             _updateStatusLabel.Text = $"Versão {targetVersion} pronta para instalar";
             DialogResult apply = MessageBox.Show(
                 $"A versão {targetVersion} foi baixada e está pronta.\n\n" +
-                "O monitoramento será interrompido, o USB será desconectado e o AuraIceLocal reiniciará automaticamente. Deseja atualizar agora?",
+                "O monitoramento será interrompido, o USB será desconectado e o RM Aura Ice Display reiniciará automaticamente. Deseja atualizar agora?",
                 "Aplicar atualização",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question,
@@ -434,12 +434,12 @@ internal sealed class MainForm : Form
         };
         manualItem.Click += (_, _) => ShowUserGuide();
 
-        var aboutItem = new ToolStripMenuItem("&Sobre o AuraIceLocal");
+        var aboutItem = new ToolStripMenuItem("&Sobre o RM Aura Ice Display");
         aboutItem.Click += (_, _) => MessageBox.Show(
-            $"AuraIceLocal {Application.ProductVersion}\n\n" +
+            $"RM Aura Ice Display {Application.ProductVersion}\n\n" +
             "Monitor local para o visor Rise Mode Aura Ice.\n" +
             "Perfil confirmado: HID AA88:8666, relatório de saída com 11 bytes.",
-            "Sobre o AuraIceLocal",
+            "Sobre o RM Aura Ice Display",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
 
@@ -1321,6 +1321,6 @@ internal sealed class MainForm : Form
 
     private static void ShowError(Exception ex)
     {
-        MessageBox.Show(ex.Message, "Erro no AuraIceLocal", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show(ex.Message, "Erro no RM Aura Ice Display", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }

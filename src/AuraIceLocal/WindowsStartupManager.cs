@@ -5,13 +5,15 @@ namespace AuraIceLocal;
 
 internal static class WindowsStartupManager
 {
-    private const string TaskName = "AuraIceLocal";
+    private const string TaskName = "RM Aura Ice Display";
+    private const string LegacyTaskName = "AuraIceLocal";
 
     public static bool IsEnabled()
     {
         try
         {
-            return RunTaskScheduler(["/Query", "/TN", TaskName], allowNotFound: true) == 0;
+            return RunTaskScheduler(["/Query", "/TN", TaskName], allowNotFound: true) == 0 ||
+                   RunTaskScheduler(["/Query", "/TN", LegacyTaskName], allowNotFound: true) == 0;
         }
         catch
         {
@@ -41,17 +43,20 @@ internal static class WindowsStartupManager
             if (exitCode != 0)
             {
                 throw new InvalidOperationException(
-                    "Não foi possível registrar o AuraIceLocal no Agendador de Tarefas do Windows.");
+                    "Não foi possível registrar o RM Aura Ice Display no Agendador de Tarefas do Windows.");
             }
+
+            _ = RunTaskScheduler(["/Delete", "/TN", LegacyTaskName, "/F"], allowNotFound: true);
 
             return;
         }
 
         int deleteExitCode = RunTaskScheduler(["/Delete", "/TN", TaskName, "/F"], allowNotFound: true);
-        if (deleteExitCode != 0 && IsEnabled())
+        int legacyDeleteExitCode = RunTaskScheduler(["/Delete", "/TN", LegacyTaskName, "/F"], allowNotFound: true);
+        if ((deleteExitCode != 0 || legacyDeleteExitCode != 0) && IsEnabled())
         {
             throw new InvalidOperationException(
-                "Não foi possível remover a inicialização automática do AuraIceLocal.");
+                "Não foi possível remover a inicialização automática do RM Aura Ice Display.");
         }
     }
 

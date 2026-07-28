@@ -2,6 +2,7 @@
 
 ## 0.3.0
 
+- Renomeia o aplicativo e o instalador para RM Aura Ice Display.
 - Adiciona ícone dinâmico na bandeja com a temperatura exibida e menu Painel/Sair.
 - O botão fechar agora oculta o painel; somente Sair encerra o processo.
 - A inicialização com o Windows abre diretamente na bandeja.

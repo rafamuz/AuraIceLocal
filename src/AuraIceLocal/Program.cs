@@ -20,8 +20,8 @@ internal static class Program
         if (!createdNew)
         {
             MessageBox.Show(
-                "O AuraIceLocal já está em execução.",
-                "AuraIceLocal",
+                "O RM Aura Ice Display já está em execução.",
+                "RM Aura Ice Display",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             return;

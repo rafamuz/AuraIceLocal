@@ -54,11 +54,11 @@ jobs:
       - name: Gerar instalador e pacotes
         run: >-
           .\.tools\vpk pack
-          --packId AuraIceLocal
+          --packId RMAuraIceDisplay
           --packVersion ${{ inputs.version }}
           --packDir artifacts/publish
-          --mainExe AuraIceLocal.exe
-          --packTitle "AuraIceLocal"
+          --mainExe RMAuraIceDisplay.exe
+          --packTitle "RM Aura Ice Display"
           --packAuthors "Rafael F. M."
           --runtime win-x64
           --releaseNotes CHANGELOG.md
@@ -72,6 +72,6 @@ jobs:
           --token "${{ secrets.GITHUB_TOKEN }}"
           --outputDir Releases
           --publish
-          --releaseName "AuraIceLocal ${{ inputs.version }}"
+          --releaseName "RM Aura Ice Display ${{ inputs.version }}"
           --tag "v${{ inputs.version }}"
           --targetCommitish "${{ github.sha }}"

@@ -7,8 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AssemblyName>AuraIceLocal</AssemblyName>
+    <AssemblyName>RMAuraIceDisplay</AssemblyName>
     <RootNamespace>AuraIceLocal</RootNamespace>
+    <Product>RM Aura Ice Display</Product>
+    <AssemblyTitle>RM Aura Ice Display</AssemblyTitle>
+    <Description>Monitor local para o visor Rise Mode Aura Ice</Description>
     <Version>0.3.0</Version>
   </PropertyGroup>
 

@@ -1,4 +1,4 @@
-# AuraIceLocal
+# RM Aura Ice Display
 
 Aplicativo local experimental para o LCD do **Rise Mode Aura Ice Black 360 mm ARGB — RM-WAIB-06-ARGB**.
 
@@ -51,7 +51,7 @@ Ao iniciar o monitoramento, o aplicativo conecta e envia ao USB automaticamente,
 2. fechar completamente o programa oficial da Rise Mode;
 3. o relatório de saída real tem exatamente 11 bytes.
 
-O AuraIceLocal não envia pacotes a dispositivos apenas classificados como `Possível` ou `Desconhecido`.
+O RM Aura Ice Display não envia pacotes a dispositivos apenas classificados como `Possível` ou `Desconhecido`.
 
 Nenhum arquivo de log é criado. Apenas preferências são guardadas em:
 
@@ -121,7 +121,7 @@ O ícone da bandeja exibe a temperatura atualmente escolhida para o visor e muda
 - fechar a janela esconde o painel, sem parar o monitoramento;
 - **Painel** reabre a janela;
 - **Sair** encerra o monitoramento, desconecta o transporte e fecha o processo;
-- quando iniciado pelo Windows, o AuraIceLocal abre diretamente na bandeja.
+- quando iniciado pelo Windows, o RM Aura Ice Display abre diretamente na bandeja.
 
 ## Compilação
 
