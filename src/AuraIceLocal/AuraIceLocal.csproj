@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>AuraIceLocal</AssemblyName>
+    <RootNamespace>AuraIceLocal</RootNamespace>
+    <Version>0.3.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\device-profiles.json" Link="device-profiles.json" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="..\..\docs\MANUAL_DO_USUARIO.md" Link="MANUAL_DO_USUARIO.md" LogicalName="AuraIceLocal.ManualDoUsuario.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="HidSharp" Version="2.6.4" />
+  </ItemGroup>
+</Project>

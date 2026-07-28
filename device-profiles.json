@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "profiles": [
+    {
+      "id": "rise-mode-aura-ice-v1",
+      "name": "Rise Mode Aura Ice",
+      "protocol": "AuraIceV1",
+      "vendorId": "AA88",
+      "productId": "8666",
+      "outputReportLength": 11,
+      "inputReportLength": 11,
+      "featureReportLength": 0,
+      "usagePage": "0x0001",
+      "usage": "0x0000",
+      "productNameContains": ["Rise", "Aura", "Ice", "温度显示HID设备"],
+      "manufacturerContains": ["Rise Mode", "Rise", "铭研科技"]
+    }
+  ]
+}

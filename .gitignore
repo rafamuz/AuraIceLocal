@@ -1,0 +1,16 @@
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+**/publish/
+**/TestResults/
+artifacts/
+releases/
+.idea/
+.codex-dotnet-sdk-*/
+.codex-dotnet-install.ps1
+**/settings.json
+*.log
+*.pfx
+*.snk
