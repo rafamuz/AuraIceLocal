@@ -15,12 +15,19 @@ internal sealed class TrayTemperatureIcon : IDisposable
 
     public TrayTemperatureIcon()
     {
-        var panelItem = new ToolStripMenuItem("Painel");
-        var exitItem = new ToolStripMenuItem("Sair");
+        var panelItem = new ToolStripMenuItem("Painel")
+        {
+            Image = UiIconFactory.Get(UiIconKind.Panel, UiTheme.Primary)
+        };
+        var exitItem = new ToolStripMenuItem("Sair")
+        {
+            Image = UiIconFactory.Get(UiIconKind.Exit, UiTheme.Danger)
+        };
         panelItem.Click += (_, _) => PanelRequested?.Invoke();
         exitItem.Click += (_, _) => ExitRequested?.Invoke();
 
         var menu = new ContextMenuStrip();
+        UiTheme.StyleContextMenu(menu);
         menu.Items.Add(panelItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(exitItem);

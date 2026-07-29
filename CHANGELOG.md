@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Corrige a abertura da Ajuda em diferentes escalas de DPI e tamanhos de janela.
+- Moderniza o painel e a Ajuda com cards, espaçamento, cores e ícones nas ações.
+- Adiciona um novo ícone do aplicativo inspirado no watercooler Aura Ice de três ventoinhas.
+
 ## 0.3.0
 
 - Renomeia o aplicativo e o instalador para RM Aura Ice Display.
