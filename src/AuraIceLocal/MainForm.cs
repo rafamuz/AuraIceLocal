@@ -68,10 +68,10 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3.3 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.4 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
-        AutoScroll = true;
+        AutoScroll = false;
         MinimumSize = new Size(940, 680);
         DoubleBuffered = true;
         UiTheme.ApplyForm(this);
@@ -105,10 +105,20 @@ internal sealed class MainForm : Form
         ConfigureMenu();
         ConfigureControlStyles();
 
-        var root = new TableLayoutPanel
+        var scrollHost = new Panel
         {
+            Name = "MainScrollHost",
             Dock = DockStyle.Fill,
             AutoScroll = true,
+            BackColor = UiTheme.AppBackground
+        };
+
+        var root = new TableLayoutPanel
+        {
+            Name = "MainContent",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Padding = new Padding(20),
             BackColor = UiTheme.AppBackground,
             ColumnCount = 1,
@@ -119,7 +129,7 @@ internal sealed class MainForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var header = new TableLayoutPanel
         {
@@ -305,6 +315,7 @@ internal sealed class MainForm : Form
         var tabsCard = new Panel
         {
             Dock = DockStyle.Fill,
+            MinimumSize = new Size(0, 350),
             BackColor = UiTheme.CardBackground,
             BorderStyle = BorderStyle.FixedSingle,
             Padding = new Padding(10),
@@ -313,7 +324,8 @@ internal sealed class MainForm : Form
         tabsCard.Controls.Add(tabs);
         root.Controls.Add(tabsCard, 0, 3);
 
-        Controls.Add(root);
+        scrollHost.Controls.Add(root);
+        Controls.Add(scrollHost);
         Controls.Add(_mainMenu);
         MainMenuStrip = _mainMenu;
 
