@@ -14,6 +14,11 @@ internal static class Program
             .SetAutoApplyOnStartup(false)
             .Run();
 
+        if (!WindowsElevation.EnsureAdministrator(args))
+        {
+            return;
+        }
+
         const string mutexName = @"Local\AuraIceLocal_5C12B3A1";
         _singleInstanceMutex = new Mutex(initiallyOwned: true, mutexName, out bool createdNew);
 

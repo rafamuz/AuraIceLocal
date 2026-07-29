@@ -1,4 +1,4 @@
-# Manual do usuário — RM Aura Ice Display 0.3.1
+# Manual do usuário — RM Aura Ice Display 0.3.2
 
 O RM Aura Ice Display monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
 
@@ -390,6 +390,8 @@ A identidade salva contém apenas perfil, VID/PID e, quando disponíveis, série
 - confirme que Core Average, CPU Package ou Core Max possuem valor;
 - execute o programa como administrador;
 - atualize drivers do chipset e sensores se o LibreHardwareMonitor não encontrar leituras.
+
+Se os nomes dos sensores aparecerem, mas todos os valores estiverem vazios, o painel informa **acesso de baixo nível indisponível**. A versão 0.3.2 tenta reinicializar esse acesso automaticamente uma vez. Se a mensagem permanecer, encerre completamente outros monitores de hardware e abra novamente o RM Aura Ice Display, aceitando a solicitação administrativa do Windows. Enquanto não houver uma temperatura válida, nenhum pacote é enviado ao visor.
 
 ### Quero encerrar completamente
 

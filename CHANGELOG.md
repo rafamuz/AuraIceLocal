@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+- Corrige o reinício sem acesso administrativo após atualizações ou atalhos externos.
+- Tenta reinicializar uma vez o acesso de baixo nível quando a CPU é enumerada sem temperaturas.
+- Diferencia sensor ausente de sensor detectado cuja leitura foi bloqueada pelo Windows.
+- Mantém o envio HID bloqueado até existir uma temperatura válida.
+
 ## 0.3.1
 
 - Corrige a abertura da Ajuda em diferentes escalas de DPI e tamanhos de janela.
