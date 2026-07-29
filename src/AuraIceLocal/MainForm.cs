@@ -40,6 +40,7 @@ internal sealed class MainForm : Form
     private readonly NumericUpDown _smoothing = new() { DecimalPlaces = 1, Minimum = 0, Maximum = 20, Increment = 0.5M, Width = 90 };
     private readonly Button _startStopButton = new() { Text = "Iniciar monitoramento", AutoSize = true };
     private readonly Button _singlePacketTestButton = new() { Text = "Enviar um pacote de teste", AutoSize = true, Enabled = false };
+    private readonly Button _installPawnIoButton = new() { Text = "Instalar suporte de sensores", AutoSize = true, Visible = false };
     private readonly CheckBox _startWithWindows = new() { Text = "Iniciar com o Windows", AutoSize = true };
     private readonly CheckBox _autoStartMonitoring = new() { Text = "Monitorar e enviar ao abrir", AutoSize = true };
     private readonly Button _checkUpdatesButton = new() { Text = "Verificar atualizações", AutoSize = true };
@@ -67,7 +68,7 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3.2 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.3 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = true;
@@ -85,6 +86,7 @@ internal sealed class MainForm : Form
 
         BuildLayout();
         LoadSettingsIntoControls();
+        _installPawnIoButton.Visible = !PawnIoSupport.IsInstalled();
         ScanDevices(showErrors: false);
 
         _safetyTimer.Tick += (_, _) => RefreshSinglePacketTestButton();
@@ -195,6 +197,7 @@ internal sealed class MainForm : Form
         monitorControls.Controls.Add(new Label { Text = "segundos", AutoSize = true, ForeColor = UiTheme.MutedText, Margin = new Padding(0, 9, 14, 0) });
         monitorControls.Controls.Add(_startStopButton);
         monitorControls.Controls.Add(_singlePacketTestButton);
+        monitorControls.Controls.Add(_installPawnIoButton);
         controlsCard.Controls.Add(monitorControls, 0, 2);
 
         var automationControls = CreateControlRow();
@@ -318,6 +321,7 @@ internal sealed class MainForm : Form
         _deviceCombo.SelectedIndexChanged += (_, _) => OnSelectedDeviceChanged();
         _startStopButton.Click += (_, _) => ToggleMonitoring();
         _singlePacketTestButton.Click += (_, _) => SendSingleTestPacket();
+        _installPawnIoButton.Click += async (_, _) => await InstallPawnIoAsync();
         _checkUpdatesButton.Click += async (_, _) => await CheckForUpdatesAsync();
         _sensorCombo.SelectedIndexChanged += (_, _) =>
         {
@@ -356,6 +360,7 @@ internal sealed class MainForm : Form
         UiTheme.StyleButton(_scanDevicesButton, UiIconKind.Search);
         UiTheme.StyleButton(_startStopButton, UiIconKind.Play, UiButtonKind.Primary);
         UiTheme.StyleButton(_singlePacketTestButton, UiIconKind.Send);
+        UiTheme.StyleButton(_installPawnIoButton, UiIconKind.Update, UiButtonKind.Primary);
         UiTheme.StyleButton(_checkUpdatesButton, UiIconKind.Update);
         UiTheme.StyleInput(_deviceCombo);
         UiTheme.StyleInput(_sensorCombo);
@@ -940,6 +945,13 @@ internal sealed class MainForm : Form
     {
         try
         {
+            if (!PawnIoSupport.IsInstalled())
+            {
+                _installPawnIoButton.Visible = true;
+                throw new InvalidOperationException(
+                    "O suporte de sensores PawnIO 2.2 ou superior não está instalado. Use o botão 'Instalar suporte de sensores'.");
+            }
+
             EnableUsbWritesForSelectedDevice();
             var hardwareMonitor = new HardwareMonitorService();
             _hardwareMonitor = hardwareMonitor;
@@ -1055,6 +1067,7 @@ internal sealed class MainForm : Form
         AuraIcePacket? packet,
         byte[]? sentReport)
     {
+        _installPawnIoButton.Visible = !PawnIoSupport.IsInstalled();
         _statusLabel.Text = SensorReadStatus.MonitoringText(snapshot);
 
         _rawTemperatureLabel.Text = FormatTemperature(snapshot.CpuTemperatureRaw);
@@ -1080,6 +1093,63 @@ internal sealed class MainForm : Form
 
         UpdateSensorList(snapshot.CpuTemperatureSensors);
         RefreshSensorCombo(snapshot.CpuTemperatureSensors);
+    }
+
+    private async Task InstallPawnIoAsync()
+    {
+        if (PawnIoSupport.IsInstalled())
+        {
+            _installPawnIoButton.Visible = false;
+            _statusLabel.Text = $"PawnIO {PawnIoSupport.GetInstalledVersion()} já está instalado";
+            return;
+        }
+
+        DialogResult confirmation = MessageBox.Show(
+            "As temperaturas da CPU exigem o driver PawnIO 2.2.0, fornecido e assinado digitalmente por namazso.eu.\n\n" +
+            "O RM Aura Ice Display baixará o instalador oficial do GitHub, verificará o SHA-256 antes de executá-lo e removerá o arquivo temporário ao terminar.\n\n" +
+            "Deseja instalar o suporte de sensores agora?",
+            "Instalar suporte de sensores",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Information,
+            MessageBoxDefaultButton.Button2);
+        if (confirmation != DialogResult.Yes)
+        {
+            return;
+        }
+
+        StopMonitoring();
+        _installPawnIoButton.Enabled = false;
+        _statusLabel.Text = "Baixando e verificando o instalador oficial do PawnIO...";
+
+        try
+        {
+            PawnIoInstallationResult result = await new PawnIoInstaller().InstallAsync();
+            if (!PawnIoSupport.IsInstalled())
+            {
+                throw new InvalidOperationException(
+                    "O instalador terminou, mas o PawnIO 2.2 não foi encontrado no Windows.");
+            }
+
+            _installPawnIoButton.Visible = false;
+            _statusLabel.Text = $"PawnIO {PawnIoSupport.GetInstalledVersion()} instalado";
+            string restartMessage = result.RebootRequired
+                ? "A instalação foi concluída e o Windows precisa ser reiniciado antes de monitorar."
+                : "A instalação foi concluída. O monitoramento já pode ser iniciado.";
+            MessageBox.Show(
+                restartMessage,
+                "Suporte de sensores instalado",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _statusLabel.Text = "Não foi possível instalar o suporte de sensores";
+            ShowError(ex);
+        }
+        finally
+        {
+            _installPawnIoButton.Enabled = true;
+        }
     }
 
     private void UpdateSensorList(IReadOnlyList<SensorReading> sensors)

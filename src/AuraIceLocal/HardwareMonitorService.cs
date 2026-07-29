@@ -4,8 +4,9 @@ namespace AuraIceLocal;
 
 internal sealed class HardwareMonitorService : IDisposable
 {
+    private static readonly TimeSpan SlowHardwareInterval = TimeSpan.FromSeconds(2);
     private Computer _computer;
-    private readonly UpdateVisitor _updateVisitor = new();
+    private DateTime _nextSlowHardwareUpdateUtc = DateTime.MinValue;
     private bool _disposed;
 
     public HardwareMonitorService()
@@ -20,7 +21,7 @@ internal sealed class HardwareMonitorService : IDisposable
         IsGpuEnabled = true,
         IsMemoryEnabled = true,
         IsMotherboardEnabled = true,
-        IsControllerEnabled = true
+        IsControllerEnabled = false
     };
 
     public void Reinitialize()
@@ -29,12 +30,13 @@ internal sealed class HardwareMonitorService : IDisposable
         _computer.Close();
         _computer = CreateComputer();
         _computer.Open();
+        _nextSlowHardwareUpdateUtc = DateTime.MinValue;
     }
 
     public HardwareSnapshot Read(string preferredCpuSensorName)
     {
         ThrowIfDisposed();
-        _computer.Accept(_updateVisitor);
+        UpdateHardware();
 
         List<ISensor> allSensors = EnumerateSensors(_computer.Hardware).ToList();
         List<ISensor> cpuTemperatureSensors = allSensors
@@ -139,6 +141,35 @@ internal sealed class HardwareMonitorService : IDisposable
         }
     }
 
+    private void UpdateHardware()
+    {
+        DateTime now = DateTime.UtcNow;
+        bool updateSlowHardware = now >= _nextSlowHardwareUpdateUtc;
+
+        foreach (IHardware hardware in _computer.Hardware)
+        {
+            UpdateHardwareTree(hardware, updateSlowHardware);
+        }
+
+        if (updateSlowHardware)
+        {
+            _nextSlowHardwareUpdateUtc = now + SlowHardwareInterval;
+        }
+    }
+
+    private static void UpdateHardwareTree(IHardware hardware, bool updateSlowHardware)
+    {
+        if (HardwareUpdatePolicy.ShouldUpdate(hardware.HardwareType, updateSlowHardware))
+        {
+            hardware.Update();
+        }
+
+        foreach (IHardware subHardware in hardware.SubHardware)
+        {
+            UpdateHardwareTree(subHardware, updateSlowHardware);
+        }
+    }
+
     private static bool NameEquals(ISensor sensor, string name) =>
         string.Equals(sensor.Name, name, StringComparison.OrdinalIgnoreCase);
 
@@ -171,4 +202,14 @@ internal sealed class HardwareMonitorService : IDisposable
         _computer.Close();
         _disposed = true;
     }
+}
+
+internal static class HardwareUpdatePolicy
+{
+    public static bool ShouldUpdate(HardwareType hardwareType, bool updateSlowHardware) => hardwareType switch
+    {
+        HardwareType.EmbeddedController or HardwareType.Cooler => false,
+        HardwareType.Motherboard or HardwareType.SuperIO => updateSlowHardware,
+        _ => true
+    };
 }

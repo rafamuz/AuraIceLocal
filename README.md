@@ -99,7 +99,9 @@ O arquivo personalizado tem prioridade. Exemplo:
 
 Um novo VID/PID deve ser adicionado somente depois de confirmar que usa o mesmo protocolo. O transporte AuraIceV1 exige correspondência exata entre o pacote de 11 bytes e o relatório de saída do dispositivo; dispositivos Possível ou Desconhecido nunca chegam ao transporte USB.
 
-O monitor usa `Core Average` por padrão, lê sensores a cada 250 ms, aplica EMA de aproximadamente 3 segundos e atualiza o LCD uma vez por segundo. `Core Max` e `CPU Package` alimentam uma proteção independente: a partir de 80 °C o maior valor é exibido imediatamente e a suavização só retorna após 5 segundos contínuos abaixo de 75 °C.
+O monitor usa `Core Average` por padrão, lê CPU/GPU/memória a cada 250 ms, consulta placa-mãe/Super I/O a cada 2 segundos, não consulta o Embedded Controller, aplica EMA de aproximadamente 3 segundos e atualiza o LCD uma vez por segundo. `Core Max` e `CPU Package` alimentam uma proteção independente: a partir de 80 °C o maior valor é exibido imediatamente e a suavização só retorna após 5 segundos contínuos abaixo de 75 °C.
+
+O LibreHardwareMonitor 0.9.6 requer o driver PawnIO 2.2 ou superior para obter as temperaturas. Quando ele não está instalado, o painel oferece **Instalar suporte de sensores**. A instalação só começa após confirmação explícita, usa o arquivo oficial assinado, confere o SHA-256 e remove o download temporário ao terminar.
 
 O botão **Enviar um pacote de teste** permanece desativado até que todas as travas de segurança sejam atendidas. Ele exige confirmação explícita, envia no máximo um relatório e desconecta o transporte após a tentativa.
 
@@ -165,5 +167,6 @@ O workflow **Publicar instalador** recebe uma versão SemVer manualmente, execut
 - LibreHardwareMonitorLib 0.9.6 — MPL-2.0;
 - HidSharp 2.6.4 — Apache-2.0.
 - Velopack 1.2.0 — MIT.
+- PawnIO 2.2 ou superior — driver externo oficial assinado, instalado separadamente após confirmação do usuário.
 
 As dependências são restauradas pelo NuGet. Nenhuma DLL extraída do programa oficial é redistribuída.
