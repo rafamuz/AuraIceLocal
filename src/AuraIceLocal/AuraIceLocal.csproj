@@ -7,17 +7,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PlatformTarget>x64</PlatformTarget>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\rm-aura-ice-app.ico</ApplicationIcon>
     <AssemblyName>RMAuraIceDisplay</AssemblyName>
     <RootNamespace>AuraIceLocal</RootNamespace>
     <Product>RM Aura Ice Display</Product>
     <AssemblyTitle>RM Aura Ice Display</AssemblyTitle>
     <Description>Monitor local para o visor Rise Mode Aura Ice</Description>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\device-profiles.json" Link="device-profiles.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="..\..\docs\MANUAL_DO_USUARIO.md" Link="MANUAL_DO_USUARIO.md" LogicalName="AuraIceLocal.ManualDoUsuario.md" />
+    <EmbeddedResource Include="..\..\assets\rm-aura-ice-app-icon.png" Link="assets\rm-aura-ice-app-icon.png" LogicalName="AuraIceLocal.AppIcon.png" />
+    <EmbeddedResource Include="..\..\assets\rm-aura-ice-app.ico" Link="assets\rm-aura-ice-app.ico" LogicalName="AuraIceLocal.AppIcon.ico" />
   </ItemGroup>
 
   <ItemGroup>

@@ -28,6 +28,7 @@ internal sealed class MainForm : Form
     private bool _updateBusy;
     private FormWindowState _lastVisibleWindowState = FormWindowState.Normal;
     private HelpForm? _helpForm;
+    private readonly Bitmap _appIconBitmap = AppVisualAssets.CreateApplicationBitmap();
 
     private readonly MenuStrip _mainMenu = new();
 
@@ -66,13 +67,14 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.1 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = true;
-        MinimumSize = new Size(900, 650);
+        MinimumSize = new Size(940, 680);
+        DoubleBuffered = true;
+        UiTheme.ApplyForm(this);
         ApplySavedWindowPlacement();
-        Font = new Font("Segoe UI", 10);
 
         if (_startedWithWindows)
         {
@@ -99,142 +101,171 @@ internal sealed class MainForm : Form
     {
         ConfigureLists();
         ConfigureMenu();
+        ConfigureControlStyles();
 
         var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            Padding = new Padding(14),
+            Padding = new Padding(20),
+            BackColor = UiTheme.AppBackground,
             ColumnCount = 1,
-            RowCount = 7,
+            RowCount = 4,
             GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var title = new Label
-        {
-            Text = "Controle local do LCD — Rise Mode Aura Ice",
-            AutoSize = true,
-            Font = new Font("Segoe UI", 14, FontStyle.Bold),
-            ForeColor = Color.FromArgb(31, 55, 78),
-            Margin = new Padding(0, 0, 0, 14)
-        };
-        root.Controls.Add(title, 0, 0);
-
-        var deviceControls = new FlowLayoutPanel
+        var header = new TableLayoutPanel
         {
             AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             Dock = DockStyle.Fill,
-            WrapContents = true,
-            Margin = new Padding(0, 0, 0, 8)
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0, 0, 0, 16)
         };
-        deviceControls.Controls.Add(new Label { Text = "Visor LCD:", AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 76));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.Controls.Add(new PictureBox
+        {
+            Image = _appIconBitmap,
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Size = new Size(64, 64),
+            Margin = new Padding(0, 0, 12, 0)
+        }, 0, 0);
+        var headerText = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = Padding.Empty
+        };
+        headerText.Controls.Add(new Label
+        {
+            Text = "RM Aura Ice Display",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 20, FontStyle.Bold),
+            ForeColor = UiTheme.Text,
+            Margin = new Padding(0, 4, 0, 0)
+        }, 0, 0);
+        headerText.Controls.Add(new Label
+        {
+            Text = "Monitoramento local e proteção térmica do seu Aura Ice",
+            AutoSize = true,
+            ForeColor = UiTheme.MutedText,
+            Margin = Padding.Empty
+        }, 0, 1);
+        header.Controls.Add(headerText, 1, 0);
+        header.Controls.Add(new Label
+        {
+            Text = "HID AA88:8666  •  relatório de 11 bytes",
+            AutoSize = true,
+            Anchor = AnchorStyles.Right,
+            BackColor = Color.FromArgb(225, 238, 255),
+            ForeColor = UiTheme.PrimaryDark,
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            Padding = new Padding(12, 8, 12, 8),
+            Margin = new Padding(12, 12, 0, 0)
+        }, 2, 0);
+        root.Controls.Add(header, 0, 0);
+
+        var controlsCard = CreateCard(rowCount: 5);
+        controlsCard.Controls.Add(CreateSectionHeading(
+            "Configuração e automação",
+            "Escolha o visor e o sensor, controle o monitoramento e as atualizações.",
+            UiIconKind.Automation), 0, 0);
+
+        var deviceControls = CreateControlRow();
+        deviceControls.Controls.Add(NewControlLabel("Visor LCD"));
         deviceControls.Controls.Add(_deviceCombo);
         deviceControls.Controls.Add(_scanDevicesButton);
         deviceControls.Controls.Add(_profileSourceLabel);
-        root.Controls.Add(deviceControls, 0, 1);
+        controlsCard.Controls.Add(deviceControls, 0, 1);
 
-        var monitorControls = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Dock = DockStyle.Fill,
-            WrapContents = true,
-            Margin = new Padding(0, 0, 0, 12)
-        };
-        monitorControls.Controls.Add(new Label { Text = "Sensor da CPU:", AutoSize = true, Margin = new Padding(0, 7, 6, 0) });
+        var monitorControls = CreateControlRow();
+        monitorControls.Controls.Add(NewControlLabel("Sensor da CPU"));
         monitorControls.Controls.Add(_sensorCombo);
-        monitorControls.Controls.Add(new Label { Text = "Suavização:", AutoSize = true, Margin = new Padding(18, 7, 6, 0) });
+        monitorControls.Controls.Add(NewControlLabel("Suavização"));
         monitorControls.Controls.Add(_smoothing);
-        monitorControls.Controls.Add(new Label { Text = "segundos", AutoSize = true, Margin = new Padding(4, 7, 15, 0) });
+        monitorControls.Controls.Add(new Label { Text = "segundos", AutoSize = true, ForeColor = UiTheme.MutedText, Margin = new Padding(0, 9, 14, 0) });
         monitorControls.Controls.Add(_startStopButton);
         monitorControls.Controls.Add(_singlePacketTestButton);
-        root.Controls.Add(monitorControls, 0, 2);
+        controlsCard.Controls.Add(monitorControls, 0, 2);
 
-        var automationControls = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Dock = DockStyle.Fill,
-            WrapContents = true,
-            Margin = new Padding(0, 0, 0, 12)
-        };
-        automationControls.Controls.Add(new Label
-        {
-            Text = "Automação:",
-            AutoSize = true,
-            Font = new Font(Font, FontStyle.Bold),
-            Margin = new Padding(0, 4, 10, 0)
-        });
+        var automationControls = CreateControlRow();
+        automationControls.Controls.Add(NewControlLabel("Automação"));
         automationControls.Controls.Add(_startWithWindows);
         automationControls.Controls.Add(_autoStartMonitoring);
         automationControls.Controls.Add(new Label
         {
-            Text = "(quando marcado, monitora e envia ao visor confirmado automaticamente)",
+            Text = "Inicia na bandeja e conecta automaticamente quando as duas opções estão marcadas.",
             AutoSize = true,
-            ForeColor = SystemColors.GrayText,
-            Margin = new Padding(10, 4, 0, 0)
+            ForeColor = UiTheme.MutedText,
+            Margin = new Padding(4, 9, 0, 0)
         });
-        root.Controls.Add(automationControls, 0, 3);
+        controlsCard.Controls.Add(automationControls, 0, 3);
 
-        var updateControls = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Dock = DockStyle.Fill,
-            WrapContents = true,
-            Margin = new Padding(0, 0, 0, 12)
-        };
-        updateControls.Controls.Add(new Label
-        {
-            Text = "Atualizações:",
-            AutoSize = true,
-            Font = new Font(Font, FontStyle.Bold),
-            Margin = new Padding(0, 7, 10, 0)
-        });
+        var updateControls = CreateControlRow(bottomMargin: 0);
+        updateControls.Controls.Add(NewControlLabel("Atualizações"));
         updateControls.Controls.Add(_checkUpdatesButton);
         _updateStatusLabel.Text = $"Versão instalada: {_updateService.CurrentVersion}";
-        _updateStatusLabel.Margin = new Padding(10, 7, 10, 0);
+        _updateStatusLabel.ForeColor = UiTheme.MutedText;
+        _updateStatusLabel.Margin = new Padding(8, 9, 10, 0);
         updateControls.Controls.Add(_updateStatusLabel);
-        _updateProgress.Margin = new Padding(6, 4, 0, 0);
+        _updateProgress.Margin = new Padding(6, 7, 0, 0);
         updateControls.Controls.Add(_updateProgress);
-        root.Controls.Add(updateControls, 0, 4);
+        controlsCard.Controls.Add(updateControls, 0, 4);
+        root.Controls.Add(controlsCard, 0, 1);
 
-        var summary = new TableLayoutPanel
+        var summaryCard = CreateCard(rowCount: 4);
+        summaryCard.Controls.Add(CreateSectionHeading(
+            "Estado em tempo real",
+            "Leituras atuais, proteção térmica e último pacote preparado para o visor.",
+            UiIconKind.Cpu), 0, 0);
+        var metrics = new TableLayoutPanel
         {
             AutoSize = true,
             Dock = DockStyle.Fill,
-            ColumnCount = 4,
-            RowCount = 6,
-            CellBorderStyle = TableLayoutPanelCellBorderStyle.Single,
-            Margin = new Padding(0, 0, 0, 12)
+            ColumnCount = 2,
+            RowCount = 4,
+            Margin = new Padding(-6, 4, -6, 4)
         };
-        summary.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        summary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        summary.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        summary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        summary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        summary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        summary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        summary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        summary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        summary.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));
+        metrics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        metrics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (int row = 0; row < 4; row++)
+        {
+            metrics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        }
+        metrics.Controls.Add(CreateMetricCard("Estado", _statusLabel), 0, 0);
+        metrics.Controls.Add(CreateMetricCard("LCD USB", _usbLabel), 1, 0);
+        metrics.Controls.Add(CreateMetricCard("Sensor de exibição", _displaySensorLabel), 0, 1);
+        metrics.Controls.Add(CreateMetricCard("Temperatura bruta", _rawTemperatureLabel), 1, 1);
+        metrics.Controls.Add(CreateMetricCard("Temperatura suavizada", _smoothedTemperatureLabel), 0, 2);
+        metrics.Controls.Add(CreateMetricCard("Temperatura exibida", _displayTemperatureLabel), 1, 2);
+        metrics.Controls.Add(CreateMetricCard("Sensor de proteção", _protectionSensorLabel), 0, 3);
+        metrics.Controls.Add(CreateMetricCard("Proteção térmica", _thermalProtectionStateLabel), 1, 3);
+        summaryCard.Controls.Add(metrics, 0, 1);
 
-        AddSummaryRow(summary, 0, "Estado:", _statusLabel, "LCD USB:", _usbLabel);
-        AddSummaryRow(summary, 1, "Sensor de exibição:", _displaySensorLabel, "Temperatura bruta:", _rawTemperatureLabel);
-        AddSummaryRow(summary, 2, "Temperatura suavizada:", _smoothedTemperatureLabel, "Temperatura exibida:", _displayTemperatureLabel);
-        AddSummaryRow(summary, 3, "Sensor de proteção:", _protectionSensorLabel, "Proteção térmica:", _thermalProtectionStateLabel);
-        summary.Controls.Add(new Label { Text = "Pacote:", AutoSize = true, Margin = new Padding(6) }, 0, 4);
-        summary.Controls.Add(_packetLabel, 1, 4);
-        summary.SetColumnSpan(_packetLabel, 3);
+        var packetCard = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = Color.FromArgb(240, 246, 255),
+            Padding = new Padding(12),
+            Margin = new Padding(0, 6, 0, 8)
+        };
+        packetCard.Controls.Add(UiTheme.NewCaption("ÚLTIMO PACOTE"), 0, 0);
+        _packetLabel.ForeColor = UiTheme.Text;
+        _packetLabel.Margin = Padding.Empty;
+        packetCard.Controls.Add(_packetLabel, 0, 1);
+        summaryCard.Controls.Add(packetCard, 0, 2);
 
         var warning = new Label
         {
@@ -243,23 +274,41 @@ internal sealed class MainForm : Form
             TextAlign = ContentAlignment.MiddleLeft,
             BackColor = Color.FromArgb(255, 248, 225),
             ForeColor = Color.FromArgb(92, 67, 0),
-            Padding = new Padding(10, 4, 10, 4),
+            Height = 56,
+            Padding = new Padding(14, 6, 14, 6),
             Text = "Envio automático: ao iniciar o monitoramento, o app conecta ao visor confirmado e envia uma vez por segundo. Antes de cada escrita, revalida o perfil, o relatório HID e se o software oficial está fechado.",
-            Margin = new Padding(0, 8, 0, 0)
+            Margin = Padding.Empty
         };
-        summary.Controls.Add(warning, 0, 5);
-        summary.SetColumnSpan(warning, 4);
-        root.Controls.Add(summary, 0, 5);
+        summaryCard.Controls.Add(warning, 0, 3);
+        root.Controls.Add(summaryCard, 0, 2);
 
-        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(16, 6) };
-        tabs.MinimumSize = new Size(0, 330);
-        var deviceTab = new TabPage("Dispositivos HID / diagnóstico");
-        var sensorTab = new TabPage("Sensores de temperatura da CPU");
+        var tabs = new TabControl
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Point(18, 7),
+            Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+            MinimumSize = new Size(0, 310)
+        };
+        var tabImages = new ImageList { ImageSize = new Size(20, 20), ColorDepth = ColorDepth.Depth32Bit };
+        tabImages.Images.Add("devices", UiIconFactory.Get(UiIconKind.Device, UiTheme.Primary));
+        tabImages.Images.Add("sensors", UiIconFactory.Get(UiIconKind.Cpu, UiTheme.Accent));
+        tabs.ImageList = tabImages;
+        var deviceTab = new TabPage("Dispositivos HID / diagnóstico") { BackColor = Color.White, Padding = new Padding(8), ImageKey = "devices" };
+        var sensorTab = new TabPage("Sensores de temperatura da CPU") { BackColor = Color.White, Padding = new Padding(8), ImageKey = "sensors" };
         deviceTab.Controls.Add(_deviceList);
         sensorTab.Controls.Add(_sensorList);
         tabs.TabPages.Add(deviceTab);
         tabs.TabPages.Add(sensorTab);
-        root.Controls.Add(tabs, 0, 6);
+        var tabsCard = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = UiTheme.CardBackground,
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(10),
+            Margin = new Padding(0, 0, 0, 4)
+        };
+        tabsCard.Controls.Add(tabs);
+        root.Controls.Add(tabsCard, 0, 3);
 
         Controls.Add(root);
         Controls.Add(_mainMenu);
@@ -300,6 +349,128 @@ internal sealed class MainForm : Form
                 _settings.Save();
             }
         };
+    }
+
+    private void ConfigureControlStyles()
+    {
+        UiTheme.StyleButton(_scanDevicesButton, UiIconKind.Search);
+        UiTheme.StyleButton(_startStopButton, UiIconKind.Play, UiButtonKind.Primary);
+        UiTheme.StyleButton(_singlePacketTestButton, UiIconKind.Send);
+        UiTheme.StyleButton(_checkUpdatesButton, UiIconKind.Update);
+        UiTheme.StyleInput(_deviceCombo);
+        UiTheme.StyleInput(_sensorCombo);
+        UiTheme.StyleInput(_smoothing);
+        UiTheme.StyleCheckBox(_startWithWindows);
+        UiTheme.StyleCheckBox(_autoStartMonitoring);
+        _profileSourceLabel.ForeColor = UiTheme.MutedText;
+        _profileSourceLabel.Margin = new Padding(6, 9, 0, 0);
+    }
+
+    private static TableLayoutPanel CreateCard(int rowCount)
+    {
+        var card = new TableLayoutPanel
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            BackColor = UiTheme.CardBackground,
+            BorderStyle = BorderStyle.FixedSingle,
+            Padding = new Padding(18),
+            ColumnCount = 1,
+            RowCount = rowCount,
+            Margin = new Padding(0, 0, 0, 14),
+            GrowStyle = TableLayoutPanelGrowStyle.FixedSize
+        };
+        card.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (int row = 0; row < rowCount; row++)
+        {
+            card.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        }
+        return card;
+    }
+
+    private static TableLayoutPanel CreateSectionHeading(string title, string subtitle, UiIconKind icon)
+    {
+        var heading = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0, 0, 0, 12)
+        };
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 36));
+        heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        heading.Controls.Add(new PictureBox
+        {
+            Image = UiIconFactory.Get(icon, UiTheme.Primary),
+            SizeMode = PictureBoxSizeMode.CenterImage,
+            Size = new Size(28, 28),
+            BackColor = Color.FromArgb(229, 239, 255),
+            Margin = new Padding(0, 2, 8, 0)
+        }, 0, 0);
+        var text = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = Padding.Empty
+        };
+        text.Controls.Add(new Label
+        {
+            Text = title,
+            AutoSize = true,
+            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            ForeColor = UiTheme.Text,
+            Margin = Padding.Empty
+        }, 0, 0);
+        text.Controls.Add(new Label
+        {
+            Text = subtitle,
+            AutoSize = true,
+            ForeColor = UiTheme.MutedText,
+            Margin = new Padding(0, 1, 0, 0)
+        }, 0, 1);
+        heading.Controls.Add(text, 1, 0);
+        return heading;
+    }
+
+    private static FlowLayoutPanel CreateControlRow(int bottomMargin = 8) => new()
+    {
+        AutoSize = true,
+        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        Dock = DockStyle.Fill,
+        WrapContents = true,
+        Margin = new Padding(0, 0, 0, bottomMargin)
+    };
+
+    private static Label NewControlLabel(string text) => new()
+    {
+        Text = text,
+        AutoSize = true,
+        Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+        ForeColor = UiTheme.Text,
+        Margin = new Padding(0, 9, 8, 0)
+    };
+
+    private static TableLayoutPanel CreateMetricCard(string caption, Control value)
+    {
+        var card = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            BackColor = UiTheme.SoftBackground,
+            Padding = new Padding(12, 10, 12, 10),
+            ColumnCount = 1,
+            RowCount = 2,
+            Margin = new Padding(6)
+        };
+        card.Controls.Add(UiTheme.NewCaption(caption.ToUpperInvariant()), 0, 0);
+        value.Margin = Padding.Empty;
+        value.ForeColor = UiTheme.Text;
+        card.Controls.Add(value, 0, 1);
+        return card;
     }
 
     private async Task CheckForUpdatesAsync()
@@ -426,15 +597,23 @@ internal sealed class MainForm : Form
 
     private void ConfigureMenu()
     {
-        var helpMenu = new ToolStripMenuItem("&Ajuda");
+        UiTheme.StyleMenu(_mainMenu);
+        var helpMenu = new ToolStripMenuItem("&Ajuda")
+        {
+            Image = UiIconFactory.Get(UiIconKind.Help, UiTheme.Primary)
+        };
         var manualItem = new ToolStripMenuItem("&Manual do usuário")
         {
             ShortcutKeys = Keys.F1,
-            ShowShortcutKeys = true
+            ShowShortcutKeys = true,
+            Image = UiIconFactory.Get(UiIconKind.Help, UiTheme.Primary)
         };
         manualItem.Click += (_, _) => ShowUserGuide();
 
-        var aboutItem = new ToolStripMenuItem("&Sobre o RM Aura Ice Display");
+        var aboutItem = new ToolStripMenuItem("&Sobre o RM Aura Ice Display")
+        {
+            Image = UiIconFactory.Get(UiIconKind.Info, UiTheme.Accent)
+        };
         aboutItem.Click += (_, _) => MessageBox.Show(
             $"RM Aura Ice Display {Application.ProductVersion}\n\n" +
             "Monitor local para o visor Rise Mode Aura Ice.\n" +
@@ -469,6 +648,8 @@ internal sealed class MainForm : Form
 
     private void ConfigureLists()
     {
+        UiTheme.StyleListView(_sensorList);
+        UiTheme.StyleListView(_deviceList);
         _sensorList.Columns.Add("Sensor", 220);
         _sensorList.Columns.Add("Identificador", 500);
         _sensorList.Columns.Add("Valor atual", 130);
@@ -766,6 +947,7 @@ internal sealed class MainForm : Form
             _temperatureFilter.Reset();
             _thermalProtection.Reset();
             _startStopButton.Text = "Parar monitoramento";
+            UiTheme.StyleButton(_startStopButton, UiIconKind.Stop, UiButtonKind.Danger);
             _statusLabel.Text = "Iniciando...";
             _monitorTask = Task.Run(() => MonitorLoopAsync(hardwareMonitor, _monitorCts.Token, showErrors));
             RefreshSinglePacketTestButton();
@@ -963,6 +1145,7 @@ internal sealed class MainForm : Form
         _thermalProtection.Reset();
 
         _startStopButton.Text = "Iniciar monitoramento";
+        UiTheme.StyleButton(_startStopButton, UiIconKind.Play, UiButtonKind.Primary);
         _statusLabel.Text = "Parado";
         _trayIcon.UpdateTemperature(null);
         RefreshSinglePacketTestButton();
@@ -1311,16 +1494,17 @@ internal sealed class MainForm : Form
         Margin = new Padding(6)
     };
 
-    private static void AddSummaryRow(TableLayoutPanel panel, int row, string leftTitle, Control leftValue, string rightTitle, Control rightValue)
-    {
-        panel.Controls.Add(new Label { Text = leftTitle, AutoSize = true, Margin = new Padding(6) }, 0, row);
-        panel.Controls.Add(leftValue, 1, row);
-        panel.Controls.Add(new Label { Text = rightTitle, AutoSize = true, Margin = new Padding(6) }, 2, row);
-        panel.Controls.Add(rightValue, 3, row);
-    }
-
     private static void ShowError(Exception ex)
     {
         MessageBox.Show(ex.Message, "Erro no RM Aura Ice Display", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _appIconBitmap.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }
