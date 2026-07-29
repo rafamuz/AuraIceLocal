@@ -4,20 +4,30 @@ namespace AuraIceLocal;
 
 internal sealed class HardwareMonitorService : IDisposable
 {
-    private readonly Computer _computer;
+    private Computer _computer;
     private readonly UpdateVisitor _updateVisitor = new();
     private bool _disposed;
 
     public HardwareMonitorService()
     {
-        _computer = new Computer
-        {
-            IsCpuEnabled = true,
-            IsGpuEnabled = true,
-            IsMemoryEnabled = true,
-            IsMotherboardEnabled = true,
-            IsControllerEnabled = true
-        };
+        _computer = CreateComputer();
+        _computer.Open();
+    }
+
+    private static Computer CreateComputer() => new()
+    {
+        IsCpuEnabled = true,
+        IsGpuEnabled = true,
+        IsMemoryEnabled = true,
+        IsMotherboardEnabled = true,
+        IsControllerEnabled = true
+    };
+
+    public void Reinitialize()
+    {
+        ThrowIfDisposed();
+        _computer.Close();
+        _computer = CreateComputer();
         _computer.Open();
     }
 

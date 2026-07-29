@@ -67,7 +67,7 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3.1 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.2 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = true;
@@ -970,6 +970,8 @@ internal sealed class MainForm : Form
     {
         DateTime lastSample = DateTime.UtcNow;
         DateTime lastLcdUpdate = DateTime.MinValue;
+        int consecutiveUnavailableSamples = 0;
+        bool lowLevelRecoveryAttempted = false;
 
         try
         {
@@ -982,6 +984,23 @@ internal sealed class MainForm : Form
                 lastSample = now;
 
                 HardwareSnapshot snapshot = hardwareMonitor.Read(sensorName);
+                if (snapshot.CpuTemperatureReadState == CpuTemperatureReadState.ValuesUnavailable)
+                {
+                    consecutiveUnavailableSamples++;
+                    if (!lowLevelRecoveryAttempted && consecutiveUnavailableSamples >= 8)
+                    {
+                        lowLevelRecoveryAttempted = true;
+                        hardwareMonitor.Reinitialize();
+                        await Task.Delay(pollIntervalMs, cancellationToken);
+                        continue;
+                    }
+                }
+                else
+                {
+                    consecutiveUnavailableSamples = 0;
+                    lowLevelRecoveryAttempted = false;
+                }
+
                 double? raw = snapshot.CpuTemperatureRaw;
                 double? smoothed = null;
 
@@ -1036,9 +1055,7 @@ internal sealed class MainForm : Form
         AuraIcePacket? packet,
         byte[]? sentReport)
     {
-        _statusLabel.Text = snapshot.CpuTemperatureRaw.HasValue
-            ? $"Monitorando — {snapshot.SelectedCpuSensor}"
-            : "Sensor de temperatura não encontrado";
+        _statusLabel.Text = SensorReadStatus.MonitoringText(snapshot);
 
         _rawTemperatureLabel.Text = FormatTemperature(snapshot.CpuTemperatureRaw);
         _smoothedTemperatureLabel.Text = FormatTemperature(smoothed);
@@ -1226,10 +1243,10 @@ internal sealed class MainForm : Form
         lock (_usbWriteGate)
         {
             return candidate is
-                {
-                    Confidence: DeviceConfidence.Confirmed,
-                    OutputReportLength: AuraIcePacket.ReportLength
-                } &&
+            {
+                Confidence: DeviceConfidence.Confirmed,
+                OutputReportLength: AuraIcePacket.ReportLength
+            } &&
                 !IsRunning &&
                 !OfficialSoftwareMayBeRunning();
         }
