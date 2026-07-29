@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.3
+
+- Detecta a ausência do PawnIO 2.2 e oferece a instalação explícita do driver oficial assinado.
+- Confere o SHA-256 do instalador antes de executá-lo e remove o arquivo temporário ao terminar.
+- Mantém a CPU em 250 ms, reduz a leitura de placa-mãe/Super I/O para 2 segundos e não consulta Embedded Controller, evitando travamentos de teclado causados por acesso excessivo ao barramento.
+- Mantém o envio USB bloqueado enquanto o suporte de sensores não estiver instalado.
+
 ## 0.3.2
 
 - Corrige o reinício sem acesso administrativo após atualizações ou atalhos externos.

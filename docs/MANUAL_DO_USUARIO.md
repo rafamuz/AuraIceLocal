@@ -1,4 +1,4 @@
-# Manual do usuário — RM Aura Ice Display 0.3.2
+# Manual do usuário — RM Aura Ice Display 0.3.3
 
 O RM Aura Ice Display monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
 
@@ -134,7 +134,9 @@ Valida o visor selecionado, verifica se o software oficial está fechado, conect
 
 Durante o monitoramento:
 
-- os sensores são lidos a cada 250 ms;
+- CPU, GPU e memória são lidas a cada 250 ms;
+- placa-mãe e Super I/O são atualizados a cada 2 segundos;
+- o Embedded Controller não é consultado, evitando contenção do barramento e atrasos no teclado;
 - a temperatura normal passa pelo filtro de suavização;
 - Core Max e CPU Package são observados pela proteção térmica;
 - o visor recebe um pacote de 11 bytes aproximadamente uma vez por segundo;
@@ -156,6 +158,21 @@ Envia exatamente um relatório e não inicia monitoramento contínuo. O botão c
 - o software oficial da Rise Mode está fechado.
 
 Antes do envio, uma confirmação mostra VID/PID, produto, tamanho e todos os bytes do pacote. Depois da tentativa, o transporte é desconectado. Cancelar a confirmação não envia nada.
+
+### Instalar suporte de sensores
+
+Este botão aparece somente quando o PawnIO 2.2 ou superior não está instalado. O PawnIO é o driver de baixo nível exigido pelo LibreHardwareMonitor para ler as temperaturas do processador.
+
+O botão nunca instala o driver sozinho: primeiro mostra uma confirmação. Depois da autorização do usuário, o aplicativo:
+
+1. interrompe o monitoramento e desconecta o transporte USB;
+2. baixa o instalador oficial assinado da release 2.2.0 do projeto PawnIO;
+3. confere o SHA-256 fixado no aplicativo;
+4. bloqueia a execução se o arquivo não for exatamente o esperado;
+5. executa o instalador oficial;
+6. remove o arquivo e a pasta temporária ao terminar.
+
+O instalador é fornecido por `namazso.eu`. O RM Aura Ice Display não incorpora, modifica nem executa uma edição irrestrita do driver.
 
 ## Automação
 
@@ -391,7 +408,7 @@ A identidade salva contém apenas perfil, VID/PID e, quando disponíveis, série
 - execute o programa como administrador;
 - atualize drivers do chipset e sensores se o LibreHardwareMonitor não encontrar leituras.
 
-Se os nomes dos sensores aparecerem, mas todos os valores estiverem vazios, o painel informa **acesso de baixo nível indisponível**. A versão 0.3.2 tenta reinicializar esse acesso automaticamente uma vez. Se a mensagem permanecer, encerre completamente outros monitores de hardware e abra novamente o RM Aura Ice Display, aceitando a solicitação administrativa do Windows. Enquanto não houver uma temperatura válida, nenhum pacote é enviado ao visor.
+Se os nomes dos sensores aparecerem, mas todos os valores estiverem vazios, o painel informa **acesso de baixo nível indisponível**. Confirme se o PawnIO 2.2 está instalado; quando ausente, use **Instalar suporte de sensores**. O aplicativo também tenta reinicializar o acesso automaticamente uma vez. Se a mensagem permanecer, encerre completamente outros monitores de hardware e abra novamente o RM Aura Ice Display, aceitando a solicitação administrativa do Windows. Enquanto não houver uma temperatura válida, nenhum pacote é enviado ao visor.
 
 ### Quero encerrar completamente
 
