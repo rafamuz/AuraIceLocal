@@ -13,7 +13,7 @@
     <Product>RM Aura Ice Display</Product>
     <AssemblyTitle>RM Aura Ice Display</AssemblyTitle>
     <Description>Monitor local para o visor Rise Mode Aura Ice</Description>
-    <Version>0.3.3</Version>
+    <Version>0.3.4</Version>
   </PropertyGroup>
 
   <ItemGroup>

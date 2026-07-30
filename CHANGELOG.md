@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+- Adiciona rolagem vertical ao painel principal quando a janela não comporta todas as seções.
+- Preserva uma área útil para as listas de dispositivos HID e sensores da CPU.
+
 ## 0.3.3
 
 - Detecta a ausência do PawnIO 2.2 e oferece a instalação explícita do driver oficial assinado.
