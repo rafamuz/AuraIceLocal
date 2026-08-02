@@ -1,4 +1,4 @@
-# Manual do usuário — RM Aura Ice Display 0.3.4
+# Manual do usuário — RM Aura Ice Display 0.3.5
 
 O RM Aura Ice Display monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
 
@@ -191,6 +191,14 @@ Quando marcada, inicia automaticamente a leitura e o envio assim que o aplicativ
 Quando combinada com **Iniciar com o Windows**, o fluxo é totalmente automático: o Windows abre o RM Aura Ice Display na bandeja e o aplicativo começa a monitorar e enviar sem que o painel precise ser aberto.
 
 Quando desmarcada, o aplicativo abre parado e aguarda o botão **Iniciar monitoramento**.
+
+### Hibernação e suspensão do Windows
+
+Antes de o Windows suspender ou hibernar, o RM Aura Ice Display memoriza se o monitoramento estava ativo, bloqueia novas escritas, desconecta o HID e encerra temporariamente o acesso aos sensores. O processo permanece na bandeja.
+
+Ao retornar, o aplicativo aguarda os drivers estabilizarem, procura novamente o visor e recria o monitoramento. São feitas até cinco tentativas silenciosas. O envio só volta depois que o dispositivo foi novamente classificado como seguro e o software oficial continua fechado.
+
+Se o monitoramento estava parado antes da suspensão, ele permanece parado. Uma ação manual no botão **Iniciar/Parar monitoramento** cancela qualquer retomada pendente.
 
 ## Atualizações do aplicativo
 

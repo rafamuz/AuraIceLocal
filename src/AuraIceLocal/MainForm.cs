@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Win32;
 using Velopack;
 
 namespace AuraIceLocal;
@@ -11,6 +12,7 @@ internal sealed class MainForm : Form
     private readonly AuraIceHidTransport _hidTransport = new();
     private readonly HidDeviceDetector _deviceDetector = new();
     private readonly UsbWriteSession _usbWriteSession = new();
+    private readonly PowerTransitionCoordinator _powerTransition = new();
     private readonly object _usbWriteGate = new();
     private readonly System.Windows.Forms.Timer _safetyTimer = new() { Interval = 500 };
     private readonly bool _startedWithWindows;
@@ -20,12 +22,15 @@ internal sealed class MainForm : Form
     private HardwareMonitorService? _hardwareMonitor;
     private CancellationTokenSource? _monitorCts;
     private Task? _monitorTask;
+    private TaskCompletionSource<bool>? _monitorReadySignal;
+    private CancellationTokenSource? _powerResumeCts;
     private HidDeviceCandidate? _selectedDevice;
     private bool _updatingDeviceControls;
     private bool _loadingAutomationControls;
     private bool _exitRequested;
     private bool _windowPlacementReady;
     private bool _updateBusy;
+    private bool _powerEventsSubscribed;
     private FormWindowState _lastVisibleWindowState = FormWindowState.Normal;
     private HelpForm? _helpForm;
     private readonly Bitmap _appIconBitmap = AppVisualAssets.CreateApplicationBitmap();
@@ -68,7 +73,7 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3.4 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.5 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = false;
@@ -96,6 +101,8 @@ internal sealed class MainForm : Form
         ResizeEnd += (_, _) => CaptureWindowPlacement(saveImmediately: true);
         SizeChanged += (_, _) => OnWindowStateChanged();
         FormClosing += OnFormClosing;
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+        _powerEventsSubscribed = true;
         _windowPlacementReady = true;
     }
 
@@ -725,6 +732,166 @@ internal sealed class MainForm : Form
         }
     }
 
+    private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
+    {
+        if (_exitRequested || IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return;
+        }
+
+        void HandleTransition() => HandlePowerModeChanged(e.Mode);
+
+        try
+        {
+            if (!InvokeRequired)
+            {
+                HandleTransition();
+            }
+            else if (e.Mode == PowerModes.Suspend)
+            {
+                Invoke(HandleTransition);
+            }
+            else
+            {
+                BeginInvoke(HandleTransition);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // A janela começou a encerrar enquanto o Windows notificava a transição.
+        }
+    }
+
+    private void HandlePowerModeChanged(PowerModes mode)
+    {
+        switch (mode)
+        {
+            case PowerModes.Suspend:
+                bool monitoringWasRunning = IsRunning;
+                _powerTransition.Suspend(monitoringWasRunning);
+                CancelPendingPowerResume(clearResumeRequest: false);
+
+                if (monitoringWasRunning)
+                {
+                    StopMonitoring();
+                    _statusLabel.Text = "Em pausa — aguardando o retorno do Windows";
+                }
+                else
+                {
+                    DisableUsbWritesAndDisconnect();
+                }
+                break;
+
+            case PowerModes.Resume:
+                PowerResumeRequest? request = _powerTransition.Resume();
+                if (request.HasValue)
+                {
+                    SchedulePowerResume(request.Value);
+                }
+                break;
+        }
+    }
+
+    private void SchedulePowerResume(PowerResumeRequest request)
+    {
+        CancelPendingPowerResume(clearResumeRequest: false);
+        var resumeCts = new CancellationTokenSource();
+        _powerResumeCts = resumeCts;
+        _ = ResumeMonitoringAfterPowerAsync(request, resumeCts);
+    }
+
+    private async Task ResumeMonitoringAfterPowerAsync(
+        PowerResumeRequest request,
+        CancellationTokenSource resumeCts)
+    {
+        const int maximumAttempts = 5;
+        CancellationToken cancellationToken = resumeCts.Token;
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(4), cancellationToken);
+
+            for (int attempt = 1; attempt <= maximumAttempts; attempt++)
+            {
+                if (_exitRequested || !_powerTransition.IsPending(request))
+                {
+                    return;
+                }
+
+                if (IsRunning)
+                {
+                    _powerTransition.Complete(request);
+                    return;
+                }
+
+                _statusLabel.Text = $"Retomando após hibernação — tentativa {attempt} de {maximumAttempts}";
+                ScanDevices(showErrors: false);
+                StartMonitoring(showErrors: false);
+
+                Task<bool>? readyTask = _monitorReadySignal?.Task;
+                bool resumed = false;
+                if (readyTask is not null)
+                {
+                    try
+                    {
+                        resumed = await readyTask.WaitAsync(TimeSpan.FromSeconds(6), cancellationToken);
+                    }
+                    catch (TimeoutException)
+                    {
+                        // Os sensores ou o HID ainda não estabilizaram; uma nova tentativa será feita.
+                    }
+                }
+
+                if (resumed && IsRunning && _powerTransition.IsPending(request))
+                {
+                    _powerTransition.Complete(request);
+                    return;
+                }
+
+                if (IsRunning)
+                {
+                    StopMonitoring();
+                }
+
+                if (attempt < maximumAttempts)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                }
+            }
+
+            if (_powerTransition.IsPending(request))
+            {
+                _powerTransition.Complete(request);
+                _statusLabel.Text =
+                    "Não foi possível retomar automaticamente. Verifique o visor e clique em Iniciar monitoramento.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Uma nova suspensão, uma ação manual ou o encerramento cancelou a retomada.
+        }
+        finally
+        {
+            if (ReferenceEquals(_powerResumeCts, resumeCts))
+            {
+                _powerResumeCts = null;
+            }
+            resumeCts.Dispose();
+        }
+    }
+
+    private void CancelPendingPowerResume(bool clearResumeRequest)
+    {
+        CancellationTokenSource? resumeCts = _powerResumeCts;
+        _powerResumeCts = null;
+        resumeCts?.Cancel();
+
+        if (clearResumeRequest)
+        {
+            _powerTransition.Cancel();
+        }
+    }
+
     private void OnStartWithWindowsChanged()
     {
         if (_loadingAutomationControls)
@@ -918,6 +1085,8 @@ internal sealed class MainForm : Form
 
     private void ToggleMonitoring()
     {
+        CancelPendingPowerResume(clearResumeRequest: true);
+
         if (IsRunning)
         {
             StopMonitoring();
@@ -968,12 +1137,19 @@ internal sealed class MainForm : Form
             var hardwareMonitor = new HardwareMonitorService();
             _hardwareMonitor = hardwareMonitor;
             _monitorCts = new CancellationTokenSource();
+            var monitorReadySignal = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            _monitorReadySignal = monitorReadySignal;
             _temperatureFilter.Reset();
             _thermalProtection.Reset();
             _startStopButton.Text = "Parar monitoramento";
             UiTheme.StyleButton(_startStopButton, UiIconKind.Stop, UiButtonKind.Danger);
             _statusLabel.Text = "Iniciando...";
-            _monitorTask = Task.Run(() => MonitorLoopAsync(hardwareMonitor, _monitorCts.Token, showErrors));
+            _monitorTask = Task.Run(() => MonitorLoopAsync(
+                hardwareMonitor,
+                _monitorCts.Token,
+                showErrors,
+                monitorReadySignal));
             RefreshSinglePacketTestButton();
         }
         catch (Exception ex)
@@ -990,7 +1166,8 @@ internal sealed class MainForm : Form
     private async Task MonitorLoopAsync(
         HardwareMonitorService hardwareMonitor,
         CancellationToken cancellationToken,
-        bool showErrors)
+        bool showErrors,
+        TaskCompletionSource<bool> monitorReadySignal)
     {
         DateTime lastSample = DateTime.UtcNow;
         DateTime lastLcdUpdate = DateTime.MinValue;
@@ -1048,6 +1225,10 @@ internal sealed class MainForm : Form
                     lastLcdUpdate = now;
 
                     sentReport = SendPacketIfAuthorized(packet);
+                    if (sentReport is not null)
+                    {
+                        monitorReadySignal.TrySetResult(true);
+                    }
                 }
 
                 BeginInvoke(() => UpdateUi(snapshot, smoothed, protection, packet, sentReport));
@@ -1057,9 +1238,11 @@ internal sealed class MainForm : Form
         catch (OperationCanceledException)
         {
             // Encerramento normal.
+            monitorReadySignal.TrySetResult(false);
         }
         catch (Exception ex)
         {
+            monitorReadySignal.TrySetResult(false);
             BeginInvoke(() =>
             {
                 StopMonitoring();
@@ -1202,10 +1385,13 @@ internal sealed class MainForm : Form
         CancellationTokenSource? cts = _monitorCts;
         Task? monitorTask = _monitorTask;
         HardwareMonitorService? hardwareMonitor = _hardwareMonitor;
+        TaskCompletionSource<bool>? monitorReadySignal = _monitorReadySignal;
         _monitorCts = null;
         _monitorTask = null;
         _hardwareMonitor = null;
+        _monitorReadySignal = null;
         cts?.Cancel();
+        monitorReadySignal?.TrySetResult(false);
         DisableUsbWritesAndDisconnect();
         SetDeviceSelectionEnabled(true);
 
@@ -1475,6 +1661,8 @@ internal sealed class MainForm : Form
             return;
         }
 
+        UnsubscribePowerEvents();
+        CancelPendingPowerResume(clearResumeRequest: true);
         CaptureWindowPlacement(saveImmediately: false);
         StopMonitoring();
         _safetyTimer.Stop();
@@ -1598,10 +1786,23 @@ internal sealed class MainForm : Form
         MessageBox.Show(ex.Message, "Erro no RM Aura Ice Display", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
+    private void UnsubscribePowerEvents()
+    {
+        if (!_powerEventsSubscribed)
+        {
+            return;
+        }
+
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        _powerEventsSubscribed = false;
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            UnsubscribePowerEvents();
+            CancelPendingPowerResume(clearResumeRequest: true);
             _appIconBitmap.Dispose();
         }
         base.Dispose(disposing);
