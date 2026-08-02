@@ -7,20 +7,21 @@ internal sealed partial class HelpForm : Form
     private static readonly Regex MarkdownLink = MarkdownLinkRegex();
     private readonly ListBox _sectionList = new();
     private readonly RichTextBox _content = new();
+    private readonly SplitContainer _contentSplit = new();
     private readonly IReadOnlyList<HelpSection> _sections;
     private readonly Font _titleFont = new("Segoe UI", 15, FontStyle.Bold);
     private readonly Font _headingFont = new("Segoe UI", 11, FontStyle.Bold);
     private readonly Font _bodyFont = new("Segoe UI", 10.5F);
     private readonly Font _codeFont = new("Consolas", 9.5F);
     private readonly Bitmap _appIconBitmap = AppVisualAssets.CreateApplicationBitmap();
+    private bool _splitterConfigured;
 
     public HelpForm()
     {
         _sections = HelpContent.LoadSections();
         Text = "Ajuda — RM Aura Ice Display";
-        StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(760, 520);
-        Size = new Size(1080, 760);
+        StartPosition = FormStartPosition.Manual;
+        MinimumSize = new Size(900, 620);
         ShowInTaskbar = false;
         UiTheme.ApplyForm(this);
 
@@ -28,7 +29,7 @@ internal sealed partial class HelpForm : Form
         _sectionList.DataSource = _sections.ToArray();
         _sectionList.DisplayMember = nameof(HelpSection.Title);
         _sectionList.DrawMode = DrawMode.OwnerDrawFixed;
-        _sectionList.ItemHeight = 38;
+        _sectionList.ItemHeight = 54;
         _sectionList.DrawItem += DrawSectionItem;
         _sectionList.SelectedIndexChanged += (_, _) => ShowSelectedSection();
         if (_sections.Count > 0)
@@ -94,16 +95,15 @@ internal sealed partial class HelpForm : Form
         header.Controls.Add(headerText, 1, 0);
         root.Controls.Add(header, 0, 0);
 
-        var contentArea = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 1,
-            BackColor = UiTheme.AppBackground,
-            Margin = Padding.Empty
-        };
-        contentArea.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 250));
-        contentArea.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        _contentSplit.Dock = DockStyle.Fill;
+        _contentSplit.Orientation = Orientation.Vertical;
+        _contentSplit.FixedPanel = FixedPanel.Panel1;
+        _contentSplit.IsSplitterFixed = false;
+        _contentSplit.SplitterWidth = 8;
+        _contentSplit.BackColor = UiTheme.AppBackground;
+        _contentSplit.Margin = Padding.Empty;
+        _contentSplit.Panel1.Padding = new Padding(0, 0, 6, 0);
+        _contentSplit.Panel2.Padding = new Padding(6, 0, 0, 0);
 
         var navigationCard = new Panel
         {
@@ -111,7 +111,7 @@ internal sealed partial class HelpForm : Form
             BackColor = UiTheme.CardBackground,
             BorderStyle = BorderStyle.FixedSingle,
             Padding = new Padding(8),
-            Margin = new Padding(0, 0, 12, 0)
+            Margin = Padding.Empty
         };
 
         _sectionList.Dock = DockStyle.Fill;
@@ -120,7 +120,7 @@ internal sealed partial class HelpForm : Form
         _sectionList.Font = new Font("Segoe UI", 10);
         _sectionList.BackColor = UiTheme.CardBackground;
         navigationCard.Controls.Add(_sectionList);
-        contentArea.Controls.Add(navigationCard, 0, 0);
+        _contentSplit.Panel1.Controls.Add(navigationCard);
 
         var articleCard = new Panel
         {
@@ -140,8 +140,8 @@ internal sealed partial class HelpForm : Form
         _content.HideSelection = false;
         _content.ScrollBars = RichTextBoxScrollBars.Vertical;
         articleCard.Controls.Add(_content);
-        contentArea.Controls.Add(articleCard, 1, 0);
-        root.Controls.Add(contentArea, 0, 1);
+        _contentSplit.Panel2.Controls.Add(articleCard);
+        root.Controls.Add(_contentSplit, 0, 1);
 
         var closeButton = new Button
         {
@@ -158,6 +158,42 @@ internal sealed partial class HelpForm : Form
         CancelButton = closeButton;
     }
 
+    protected override void OnLoad(EventArgs e)
+    {
+        Rectangle workingArea = Owner is not null
+            ? Screen.FromControl(Owner).WorkingArea
+            : Screen.FromControl(this).WorkingArea;
+        Bounds = HelpWindowLayout.CreateInitialBounds(workingArea, MinimumSize);
+
+        base.OnLoad(e);
+        PerformLayout();
+        ConfigureSplitter();
+    }
+
+    private void ConfigureSplitter()
+    {
+        if (_splitterConfigured || _contentSplit.ClientSize.Width <= 0)
+        {
+            return;
+        }
+
+        int? distance = HelpWindowLayout.GetInitialSplitterDistance(
+            _contentSplit.ClientSize.Width,
+            desiredDistance: 340,
+            panel1Minimum: 220,
+            panel2Minimum: 420,
+            _contentSplit.SplitterWidth);
+        if (!distance.HasValue)
+        {
+            return;
+        }
+
+        _contentSplit.SplitterDistance = distance.Value;
+        _contentSplit.Panel1MinSize = 220;
+        _contentSplit.Panel2MinSize = 420;
+        _splitterConfigured = true;
+    }
+
     private void DrawSectionItem(object? sender, DrawItemEventArgs e)
     {
         if (e.Index < 0 || e.Index >= _sections.Count)
@@ -170,14 +206,18 @@ internal sealed partial class HelpForm : Form
         Color foreColor = selected ? UiTheme.PrimaryDark : UiTheme.Text;
         using var background = new SolidBrush(backColor);
         e.Graphics.FillRectangle(background, e.Bounds);
-        Rectangle textBounds = new(e.Bounds.X + 12, e.Bounds.Y, e.Bounds.Width - 18, e.Bounds.Height);
+        Rectangle textBounds = new(e.Bounds.X + 12, e.Bounds.Y + 4, e.Bounds.Width - 20, e.Bounds.Height - 8);
         TextRenderer.DrawText(
             e.Graphics,
             _sections[e.Index].Title,
             _sectionList.Font,
             textBounds,
             foreColor,
-            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            TextFormatFlags.Left |
+            TextFormatFlags.VerticalCenter |
+            TextFormatFlags.WordBreak |
+            TextFormatFlags.EndEllipsis |
+            TextFormatFlags.NoPrefix);
         if (selected)
         {
             using var accent = new SolidBrush(UiTheme.Primary);
@@ -257,5 +297,44 @@ internal sealed partial class HelpForm : Form
             _appIconBitmap.Dispose();
         }
         base.Dispose(disposing);
+    }
+}
+
+internal static class HelpWindowLayout
+{
+    private const double InitialWidthRatio = 0.82;
+    private const double InitialHeightRatio = 0.86;
+
+    public static Rectangle CreateInitialBounds(Rectangle workingArea, Size minimumSize)
+    {
+        int minimumWidth = Math.Min(minimumSize.Width, workingArea.Width);
+        int minimumHeight = Math.Min(minimumSize.Height, workingArea.Height);
+        int width = Math.Clamp(
+            (int)Math.Round(workingArea.Width * InitialWidthRatio),
+            minimumWidth,
+            workingArea.Width);
+        int height = Math.Clamp(
+            (int)Math.Round(workingArea.Height * InitialHeightRatio),
+            minimumHeight,
+            workingArea.Height);
+        int x = workingArea.Left + ((workingArea.Width - width) / 2);
+        int y = workingArea.Top + ((workingArea.Height - height) / 2);
+        return new Rectangle(x, y, width, height);
+    }
+
+    public static int? GetInitialSplitterDistance(
+        int clientWidth,
+        int desiredDistance,
+        int panel1Minimum,
+        int panel2Minimum,
+        int splitterWidth)
+    {
+        int maximumDistance = clientWidth - splitterWidth - panel2Minimum;
+        if (maximumDistance < panel1Minimum)
+        {
+            return null;
+        }
+
+        return Math.Clamp(desiredDistance, panel1Minimum, maximumDistance);
     }
 }

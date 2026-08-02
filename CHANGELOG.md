@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.6
+
+- Aumenta a janela inicial da Ajuda para ocupar a maior parte da tela disponível.
+- Permite arrastar a divisória e aumentar ou reduzir a navegação lateral.
+- Exibe títulos laterais maiores em até duas linhas, evitando cortes desnecessários.
+- Calcula o `SplitterDistance` somente depois do layout para impedir erros em telas menores ou com DPI elevado.
+
 ## 0.3.5
 
 - Pausa o monitoramento e desconecta o HID antes da suspensão ou hibernação do Windows.

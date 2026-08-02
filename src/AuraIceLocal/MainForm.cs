@@ -73,7 +73,7 @@ internal sealed class MainForm : Form
         _trayIcon = new TrayTemperatureIcon();
         _trayIcon.PanelRequested += ShowPanel;
         _trayIcon.ExitRequested += ExitApplication;
-        Text = "RM Aura Ice Display 0.3.5 — Rise Mode Aura Ice";
+        Text = "RM Aura Ice Display 0.3.6 — Rise Mode Aura Ice";
         StartPosition = FormStartPosition.Manual;
         AutoScaleMode = AutoScaleMode.Dpi;
         AutoScroll = false;

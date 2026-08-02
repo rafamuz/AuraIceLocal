@@ -43,4 +43,41 @@ public sealed class UiSmokeTests
         Assert.True(icon.Width >= 16);
         Assert.True(icon.Height >= 16);
     }
+
+    [Fact]
+    public void HelpWindowUsesMostOfTheAvailableScreen()
+    {
+        Rectangle bounds = HelpWindowLayout.CreateInitialBounds(
+            new Rectangle(0, 0, 1920, 1000),
+            new Size(900, 620));
+
+        Assert.Equal(new Rectangle(173, 70, 1574, 860), bounds);
+    }
+
+    [Theory]
+    [InlineData(1200, 340)]
+    [InlineData(900, 340)]
+    [InlineData(700, 272)]
+    public void HelpNavigationStartsAtSafeResizableWidth(int clientWidth, int expected)
+    {
+        int? distance = HelpWindowLayout.GetInitialSplitterDistance(
+            clientWidth,
+            desiredDistance: 340,
+            panel1Minimum: 220,
+            panel2Minimum: 420,
+            splitterWidth: 8);
+
+        Assert.Equal(expected, distance);
+    }
+
+    [Fact]
+    public void HelpNavigationWaitsUntilBothPanelsFit()
+    {
+        Assert.Null(HelpWindowLayout.GetInitialSplitterDistance(
+            clientWidth: 600,
+            desiredDistance: 340,
+            panel1Minimum: 220,
+            panel2Minimum: 420,
+            splitterWidth: 8));
+    }
 }
