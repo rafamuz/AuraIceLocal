@@ -1,4 +1,4 @@
-# Manual do usuário — RM Aura Ice Display 0.3.5
+# Manual do usuário — RM Aura Ice Display 0.3.6
 
 O RM Aura Ice Display monitora sensores do computador e envia informações de temperatura e utilização para o visor do water cooler Rise Mode Aura Ice. Este manual descreve cada parte do painel, o motivo de ela existir e os cuidados necessários para usar o aplicativo com segurança.
 
@@ -45,6 +45,8 @@ Ao clicar em **Iniciar monitoramento**, o aplicativo passa a enviar dados reais 
 ### Manual do usuário
 
 Abre esta documentação dentro do aplicativo. A lista à esquerda separa os assuntos e o painel à direita mostra as instruções. O atalho **F1** abre o mesmo manual.
+
+A janela ocupa a maior parte da tela disponível. A divisória entre a lista de assuntos e o texto pode ser arrastada para aumentar ou reduzir a navegação lateral; títulos maiores são exibidos em até duas linhas.
 
 O manual é incorporado ao executável durante a compilação. Isso garante que a ajuda instalada corresponda à versão do aplicativo.
 
