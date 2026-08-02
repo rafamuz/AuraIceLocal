@@ -53,7 +53,7 @@ internal sealed class PawnIoInstaller
         try
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("RM-Aura-Ice-Display/0.3.3");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("RM-Aura-Ice-Display/0.3.5");
             using HttpResponseMessage response = await client.GetAsync(
                 PawnIoSupport.InstallerUrl,
                 HttpCompletionOption.ResponseHeadersRead,

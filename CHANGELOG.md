@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.5
+
+- Pausa o monitoramento e desconecta o HID antes da suspensão ou hibernação do Windows.
+- Reenumera sensores e visor após a retomada e reinicia somente se o monitoramento estava ativo.
+- Aguarda a estabilização dos drivers e faz até cinco tentativas seguras de reconexão.
+- Cancela a retomada automática quando o usuário controla o monitoramento manualmente.
+
 ## 0.3.4
 
 - Adiciona rolagem vertical ao painel principal quando a janela não comporta todas as seções.

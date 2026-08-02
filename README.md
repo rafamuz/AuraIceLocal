@@ -114,6 +114,8 @@ A interface oferece duas opções independentes:
 
 Quando **Monitorar e enviar ao abrir** está marcado, o aplicativo inicia a leitura e o envio ao visor confirmado automaticamente. Desmarcado, ele abre parado e aguarda o botão **Iniciar monitoramento**.
 
+Durante suspensão ou hibernação, o aplicativo fecha temporariamente os acessos aos sensores e ao HID. Depois da retomada, aguarda os drivers, enumera novamente o visor e reinicia o monitoramento somente se ele estava ativo antes, com até cinco tentativas e todas as validações de segurança antes da primeira escrita.
+
 Na primeira execução, o painel abre centralizado com aproximadamente 60% da largura e 80% da altura útil da tela. Posição, tamanho e estado maximizado são lembrados nas execuções seguintes. A tarefa agendada usa o caminho absoluto do executável que criou o registro; em uma instalação portátil, desative e ative novamente a inicialização automática depois de mover a pasta.
 
 ## Bandeja do sistema

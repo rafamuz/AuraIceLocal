@@ -15,6 +15,7 @@ public sealed class HelpContentTests
         Assert.Contains("Enviar um pacote de teste", manual, StringComparison.Ordinal);
         Assert.Contains("Iniciar com o Windows", manual, StringComparison.Ordinal);
         Assert.Contains("Monitorar e enviar ao abrir", manual, StringComparison.Ordinal);
+        Assert.Contains("Hibernação e suspensão do Windows", manual, StringComparison.Ordinal);
         Assert.Contains("Verificar atualizações", manual, StringComparison.Ordinal);
         Assert.Contains("Painel", manual, StringComparison.Ordinal);
         Assert.Contains("Sair", manual, StringComparison.Ordinal);
